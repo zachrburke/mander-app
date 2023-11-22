@@ -1,0 +1,59 @@
+@import "https://unpkg.com/open-props";
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    --heading-bg: var(--red-2);
+    --button-bg: var(--blue-6);
+    --button-color: white;
+}
+
+.logo {
+    width: 64px;
+    height: 64px;
+    grid-area: logo;
+}
+
+header {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    column-gap: 10px;
+    align-items: center;
+    grid-template-areas: 
+        "logo h1"
+        "logo subheading";
+    padding: 12px;
+    border-bottom: 1px solid #ccc;
+}
+
+header h1 {
+    grid-area: h1;
+    margin: 0;
+    line-height: 1rem;
+}
+
+header .subheading {
+    grid-area: subheading;
+    margin: 0;
+}
+
+button {
+    background-color: var(--button-bg);
+    color: var(--button-color);
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.ribbon {
+    background-color: var(--heading-bg);
+    margin-bottom: 10px;
+    padding: 0 var(--size-4);
+    display: flex;
+    align-items: center;
+    gap: var(--size-4);
+    text-transform: uppercase;
+    letter-spacing: 0.015em;
+}

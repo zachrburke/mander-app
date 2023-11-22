@@ -1,0 +1,55 @@
+
+@scope (.transaction) {
+    :scope {
+        display: grid;
+        grid-template-columns: 64px 2fr 1fr;
+        grid-column-gap: 10px;
+        grid-template-areas:
+            "logo title amount"
+            "logo category date"
+            ". . .";
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .logo { grid-area: logo; }
+    .title { grid-area: title; }
+    .amount { grid-area: amount; }
+    .category { grid-area: category; }
+    .date { grid-area: date; }
+
+    .logo {
+        border-radius: 50%;
+        max-width: 64px;
+    }
+
+    h3 {
+        margin: 0;
+    }
+}
+
+.transaction-list {
+    list-style: none;
+}
+
+@scope (.account-balance) {
+    :scope {
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    h3 {
+        margin: 0;
+    }
+}
+
+.account-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
