@@ -2,7 +2,7 @@ import { LoaderFunction, json, redirect } from "@remix-run/node";
 import { createClient } from "redis";
 
 async function exchangeToken(publicToken: string) {
-  const response = await fetch('https://sandbox.plaid.com/item/public_token/exchange', {
+  const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/item/public_token/exchange`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

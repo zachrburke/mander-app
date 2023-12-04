@@ -24,6 +24,7 @@ export default function App() {
         <link rel="stylesheet" href={styles} />
         <Meta />
         <Links />
+        <script type="text/javascript" src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
       </head>
       <body>
         <header>
@@ -32,6 +33,8 @@ export default function App() {
           <p className="subheading">Your 🔥 boost toward financial independence</p>
         </header>
         <main>
+          <div data-netlify-identity-menu></div>
+          <div data-netlify-identity-button>Login with Netlify Identity</div>
           <Outlet />
         </main>
         <ScrollRestoration />

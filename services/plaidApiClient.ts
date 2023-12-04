@@ -49,7 +49,7 @@ export type PaymentMeta = {
 
 export async function getLinkToken() : Promise<string> {
   // Get the Plaid Link token
-  const response = await fetch('https://sandbox.plaid.com/link/token/create', {
+  const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/link/token/create`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -64,17 +64,20 @@ export async function getLinkToken() : Promise<string> {
         client_user_id: '1',
       },
       products: ['auth'],
-      onSucess: 'https://localhost:3000/complete-link-account',
     }),
   });
 
   const json = await response.json();
+  if (response.status !== 200) {
+    console.error(json, { plaidEnv: process.env.PLAID_ENV, plaidClientId: process.env.PLAID_CLIENT_ID });
+    throw new Error('Unable to get link token, make sure you are using a valid Plaid client ID and secret');
+  }
 
   return json.link_token;
 }
 
 export async function getAccounts(accessToken: string) : Promise<Account[]> {
-  const response = await fetch('https://sandbox.plaid.com/accounts/get', {
+  const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/accounts/get`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -87,12 +90,11 @@ export async function getAccounts(accessToken: string) : Promise<Account[]> {
   });
 
   const json = await response.json();
-
-  return json.accounts;
+  return json.accounts || [];
 }
 
 export async function getTransactions(accessToken: string, startDate: string, endDate: string) : Promise<Transaction[]> {
-  const response = await fetch('https://sandbox.plaid.com/transactions/get', {
+  const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/transactions/get`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -108,5 +110,5 @@ export async function getTransactions(accessToken: string, startDate: string, en
 
   const json = await response.json();
 
-  return json.transactions;
+  return json.transactions || [];
 }
