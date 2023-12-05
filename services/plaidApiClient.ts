@@ -61,9 +61,11 @@ export async function getLinkToken() : Promise<string> {
       country_codes: ['US'],
       language: 'en',
       user: {
+        // TODO: Replace this with the user ID from your app
         client_user_id: '1',
       },
-      products: ['auth'],
+      products: ['transactions', 'investments'],
+      optional_products: ['liabilities'],
     }),
   });
 
