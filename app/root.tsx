@@ -9,7 +9,7 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 import netlifyIdentity from "netlify-identity-widget";
-import { useEffect } from "react";
+import { createContext, useEffect } from "react";
 import styles from "~/styles/site.css";
 
 export const links: LinksFunction = () => [
@@ -19,7 +19,10 @@ export const links: LinksFunction = () => [
 export default function App() {
   useEffect(() => {
     netlifyIdentity.init();
+
   });
+  const user = netlifyIdentity.currentUser();
+  const isAuthed = user && user.id;
   return (
     <html lang="en">
       <head>
@@ -38,9 +41,12 @@ export default function App() {
         </header>
         <main>
           <div>
-            <button onClick={() => netlifyIdentity.open()}>Login with Netlify</button>
+            {!isAuthed && <button onClick={() => netlifyIdentity.open()}>Login with Netlify</button>}
+            {isAuthed && <button onClick={() => netlifyIdentity.logout()}>Logout</button>}
           </div>
-          <Outlet />
+
+          {isAuthed && <Outlet />}
+          {!isAuthed && <div>Not logged in</div>}
         </main>
         <ScrollRestoration />
         <Scripts />
