@@ -8,6 +8,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+import netlifyIdentity from "netlify-identity-widget";
+import { useEffect } from "react";
 import styles from "~/styles/site.css";
 
 export const links: LinksFunction = () => [
@@ -15,6 +17,9 @@ export const links: LinksFunction = () => [
 ];
 
 export default function App() {
+  useEffect(() => {
+    netlifyIdentity.init();
+  });
   return (
     <html lang="en">
       <head>
@@ -24,7 +29,6 @@ export default function App() {
         <link rel="stylesheet" href={styles} />
         <Meta />
         <Links />
-        <script type="text/javascript" src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
       </head>
       <body>
         <header>
@@ -33,8 +37,9 @@ export default function App() {
           <p className="subheading">Your 🔥 boost toward financial independence</p>
         </header>
         <main>
-          <div data-netlify-identity-menu></div>
-          <div data-netlify-identity-button>Login with Netlify Identity</div>
+          <div>
+            <button onClick={() => netlifyIdentity.open()}>Login with Netlify</button>
+          </div>
           <Outlet />
         </main>
         <ScrollRestoration />

@@ -103,7 +103,7 @@ export default function Index() {
           </li>
         ))}
       </ul>
-      <h2 className="ribbon">
+      <h2 className="ribbon" id="transactions">
         Transactions 
         <form>
           <input type="month" name="period" defaultValue={period} />
@@ -121,7 +121,7 @@ export default function Index() {
             <th>Category</th>
             <th>Amount</th>
             <th>
-              <a href="javascript:void" onClick={() => setCategoryFilter(null)}>Clear</a>
+              <a href="#transactions" onClick={() => setCategoryFilter(null)}>Clear</a>
             </th>
           </tr>
         </thead>
@@ -131,7 +131,7 @@ export default function Index() {
               <td>{category}</td>
               <td>{formatCurrency(amount, 'USD')}</td>
               <td>
-                <a href="javascript:void" onClick={() => setCategoryFilter(category)}>Filter</a>
+                <a href="#transactions" onClick={() => setCategoryFilter(category)}>Filter</a>
               </td>
             </tr>
           ))}
