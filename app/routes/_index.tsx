@@ -41,7 +41,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 async function getLinkedItems(userId: string) {
-  const client = createClient({ url: 'redis://localhost:6381' });
+  const client = createClient({ url: process.env.REDIS_URL });
   await client.connect();
   const itemIds = await client.sMembers(`user:${userId}:items`);
   const items = [];

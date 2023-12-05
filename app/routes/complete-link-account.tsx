@@ -19,7 +19,7 @@ async function exchangeToken(publicToken: string) {
 }
 
 async function saveAccessToken(userId: string, itemId: string, accessToken: string) {
-  const client = createClient({ url: 'redis://localhost:6381' });
+  const client = createClient({ url: process.env.REDIS_URL });
   await client.connect();
   await client.hSet(`user:${userId}:${itemId}`, {
     userId,
