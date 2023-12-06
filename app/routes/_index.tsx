@@ -6,7 +6,7 @@ import {
   PlaidLinkOnSuccess,
 } from 'react-plaid-link';
 import { createClient } from "../lib/redis.server";
-import * as plaidApi from "services/plaidApiClient";
+import * as plaidApi from "~/services/plaidApiClient";
 import styles from '~/styles/_index.css';
 import { useState } from "react";
 import dayjs from "dayjs";

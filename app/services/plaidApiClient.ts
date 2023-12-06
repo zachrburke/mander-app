@@ -64,8 +64,8 @@ export async function getLinkToken() : Promise<string> {
         // TODO: Replace this with the user ID from your app
         client_user_id: '1',
       },
-      products: ['transactions', 'investments'],
-      optional_products: ['liabilities'],
+      products: ['transactions'],
+      optional_products: ['liabilities', 'investments'],
     }),
   });
 
