@@ -13,8 +13,8 @@ import dayjs from "dayjs";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "FIRE Mana" },
-    { name: "description", content: "Welcome to FIRE Mana!" },
+    { title: "Mander" },
+    { name: "description", content: "Welcome to Mander!" },
   ];
 };
 
@@ -105,17 +105,17 @@ export default function Index() {
       </ul>
       <h2 className="ribbon" id="transactions">
         Transactions 
+      </h2>
+      <p>
         <form>
           <input type="month" name="period" defaultValue={period} />
           <button>Go</button>
         </form>
-      </h2>
-      <p>
         Showing transactions from {period} 
         {categoryFilter && <strong> for {categoryFilter}</strong>}
       </p>
-      <p>Breakdown by category</p>
-      <table>
+      <h3 className="ribbon">Breakdown by category</h3>
+      <table className="breakdown">
         <thead>
           <tr>
             <th>Category</th>
@@ -147,7 +147,7 @@ export default function Index() {
         {transactions.map((transaction: plaidApi.Transaction) => (
           <li key={transaction.transaction_id}>
             <TransactionView transaction={transaction} />
-            <details>
+            <details hidden>
               <summary>Code</summary>
               <pre>{JSON.stringify(transaction, null, 2)}</pre>
             </details>
@@ -173,12 +173,11 @@ const currentMonth = () => {
 
 const AccountView = ({ account }: { account: plaidApi.Account }) => {
   const balance = getBalance(account);
-  if (balance === 0) return null;
   return (
     <div className="account-balance">
       <h3>{formatCurrency(balance, account.balances.iso_currency_code)}</h3>
       <span>{account.name} *{account.mask}</span>
-      <details>
+      <details hidden>
         <summary>Code</summary>
         <pre>{JSON.stringify(account, null, 2)}</pre>
       </details>

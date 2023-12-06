@@ -57,7 +57,7 @@ export async function getLinkToken() : Promise<string> {
     body: JSON.stringify({
       client_id: process.env.PLAID_CLIENT_ID,
       secret: process.env.PLAID_CLIENT_SECRET,
-      client_name: 'FIRE Mana',
+      client_name: 'Mander',
       country_codes: ['US'],
       language: 'en',
       user: {

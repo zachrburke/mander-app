@@ -18,16 +18,20 @@ export const links: LinksFunction = () => [
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
   useEffect(() => {
     netlifyIdentity.init();
     netlifyIdentity.on("login", () => {
       setIsLoggedIn(true);
+      setUser(netlifyIdentity.currentUser());
     });
     netlifyIdentity.on("logout", () => {
       setIsLoggedIn(false);
+      setUser(null);
     });
     const user = netlifyIdentity.currentUser();
     setIsLoggedIn(user && user.id);
+    setUser(user);
   });
   return (
     <html lang="en">
@@ -41,16 +45,13 @@ export default function App() {
       </head>
       <body>
         <header>
-          <img className="logo" src="/logo.png" alt="FIRE Mana" />
-          <h1>FIRE Mana</h1>
+          <img className="logo" src="/logo.png" alt="Mander" />
+          <h1>Mander</h1>
           <p className="subheading">Your 🔥 boost toward financial independence</p>
+          <LoginView user={user} isLoggedIn={isLoggedIn} />
         </header>
         <main>
-          <div>
-            {!isLoggedIn && <button onClick={() => netlifyIdentity.open()}>Login with Netlify</button>}
-            {isLoggedIn && <button onClick={() => netlifyIdentity.logout()}>Logout</button>}
-          </div>
-
+          <pre hidden>{JSON.stringify(user, null, 2)}</pre>
           {isLoggedIn && <Outlet />}
           {!isLoggedIn && <div>Not logged in</div>}
         </main>
@@ -60,4 +61,20 @@ export default function App() {
       </body>
     </html>
   );
+}
+
+const LoginView = ({ user, isLoggedIn }: { user: any, isLoggedIn: boolean }) => {
+  if (!isLoggedIn) {
+    return (
+      <div className="login">
+        <button onClick={() => netlifyIdentity.open()}>Login with Netlify</button>
+      </div>
+    )
+  }
+  return (
+    <div className="login">
+      <span>{user && (user.user_metadata.full_name || user.email)}</span>
+      <button onClick={() => netlifyIdentity.logout()}>Logout</button>
+    </div>
+  )
 }
