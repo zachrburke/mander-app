@@ -47,7 +47,7 @@ export type PaymentMeta = {
   reference_number: string;
 };
 
-export async function getLinkToken() : Promise<string> {
+export async function getLinkToken(userId: string) : Promise<string> {
   // Get the Plaid Link token
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/link/token/create`, {
     method: 'POST',
@@ -61,8 +61,7 @@ export async function getLinkToken() : Promise<string> {
       country_codes: ['US'],
       language: 'en',
       user: {
-        // TODO: Replace this with the user ID from your app
-        client_user_id: '1',
+        client_user_id: userId,
       },
       products: ['transactions'],
       optional_products: ['liabilities', 'investments'],

@@ -10,6 +10,7 @@ import * as plaidApi from "~/services/plaidApiClient";
 import styles from '~/styles/_index.css';
 import { useState } from "react";
 import dayjs from "dayjs";
+import { getSession } from "~/sessions";
 
 export const meta: MetaFunction = () => {
   return [
@@ -22,13 +23,22 @@ export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: styles }];
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async ({ request, context }) => {
+  console.log('context', context);
+  const session = await getSession(request.headers.get("Cookie"));
+  const userId = session.get('userId') || '';
+  console.log('userId', userId);
+  console.log('session.email', session.get('email'));
+  if (!userId) {
+    console.log('no userId');
+    return {};
+  }
   const url = new URL(request.url);
   const period = url.searchParams.get('period') || currentMonth();
   const start = dayjs(period).startOf('month').format('YYYY-MM-DD');
   const end = dayjs(period).endOf('month').format('YYYY-MM-DD');
-  const linkToken = await plaidApi.getLinkToken();
-  const items = await getLinkedItems('sandbox');
+  const linkToken = await plaidApi.getLinkToken(userId);
+  const items = await getLinkedItems(userId);
   const allAccounts = [];
   const allTransactions = [];
   for (const item of items) {

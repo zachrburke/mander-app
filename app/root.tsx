@@ -8,7 +8,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import netlifyIdentity from "netlify-identity-widget";
+import netlifyIdentity, { User } from "netlify-identity-widget";
 import { createContext, useEffect, useState } from "react";
 import styles from "~/styles/site.css";
 
@@ -18,21 +18,39 @@ export const links: LinksFunction = () => [
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   useEffect(() => {
     netlifyIdentity.init();
-    netlifyIdentity.on("login", () => {
+    netlifyIdentity.on("login", async () => {
       setIsLoggedIn(true);
-      setUser(netlifyIdentity.currentUser());
+      const user = netlifyIdentity.currentUser();
+      setUser(user);
+      await fetch('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user?.id,
+          email: user?.email,
+        }),
+      
+      })
     });
-    netlifyIdentity.on("logout", () => {
+    netlifyIdentity.on("logout", async () => {
       setIsLoggedIn(false);
       setUser(null);
+      await fetch('/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
     });
-    const user = netlifyIdentity.currentUser();
-    setIsLoggedIn(user && user.id);
-    setUser(user);
-  });
+    const currentUser = netlifyIdentity.currentUser();
+    setIsLoggedIn(currentUser !== null && currentUser.id !== null);
+    setUser(currentUser);
+  }, []);
   return (
     <html lang="en">
       <head>
