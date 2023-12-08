@@ -1,56 +1,30 @@
 import { cssBundleHref } from "@remix-run/css-bundle";
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunction } from "@remix-run/node";
 import {
+  Form,
   Links,
   LiveReload,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "@remix-run/react";
-import netlifyIdentity, { User } from "netlify-identity-widget";
-import { createContext, useEffect, useState } from "react";
 import styles from "~/styles/site.css";
+import { authenticator } from "~/auth.server";
+import { SessionData } from "./sessions.server";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
 ];
 
+export const loader: LoaderFunction = async ({ request }) => {
+  const user = await authenticator.isAuthenticated(request);
+  return { user };
+};
+
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  useEffect(() => {
-    netlifyIdentity.init();
-    netlifyIdentity.on("login", async () => {
-      setIsLoggedIn(true);
-      const user = netlifyIdentity.currentUser();
-      setUser(user);
-      await fetch('/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user?.id,
-          email: user?.email,
-        }),
-      
-      })
-    });
-    netlifyIdentity.on("logout", async () => {
-      setIsLoggedIn(false);
-      setUser(null);
-      await fetch('/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-    });
-    const currentUser = netlifyIdentity.currentUser();
-    setIsLoggedIn(currentUser !== null && currentUser.id !== null);
-    setUser(currentUser);
-  }, []);
+  const { user } = useLoaderData<typeof loader>();
   return (
     <html lang="en">
       <head>
@@ -65,13 +39,10 @@ export default function App() {
         <header>
           <img className="logo" src="/logo.png" alt="Mander" />
           <h1>Mander</h1>
-          <p className="subheading">Your 🔥 boost toward financial independence</p>
-          <LoginView user={user} isLoggedIn={isLoggedIn} />
+          <LoginView user={user} />
         </header>
         <main>
-          <pre hidden>{JSON.stringify(user, null, 2)}</pre>
-          {isLoggedIn && <Outlet />}
-          {!isLoggedIn && <div>Not logged in</div>}
+          <Outlet />
         </main>
         <ScrollRestoration />
         <Scripts />
@@ -81,18 +52,14 @@ export default function App() {
   );
 }
 
-const LoginView = ({ user, isLoggedIn }: { user: any, isLoggedIn: boolean }) => {
-  if (!isLoggedIn) {
+const LoginView = ({ user }: { user: SessionData | null }) => {
+  if (user) {
     return (
-      <div className="login">
-        <button onClick={() => netlifyIdentity.open()}>Login with Netlify</button>
-      </div>
-    )
+      <Form action="/logout" method="post" className="login">
+        <p>{user.displayName}</p>
+        <button>Logout</button>
+      </Form>
+    );
   }
-  return (
-    <div className="login">
-      <span>{user && (user.user_metadata.full_name || user.email)}</span>
-      <button onClick={() => netlifyIdentity.logout()}>Logout</button>
-    </div>
-  )
+  return (null);
 }

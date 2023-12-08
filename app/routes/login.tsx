@@ -1,14 +1,10 @@
-import { ActionFunctionArgs, redirect, json } from "@remix-run/node";
-import { getSession, commitSession } from "../sessions";
+import { Form } from "@remix-run/react";
 
-export async function action({ request }: ActionFunctionArgs) {
-  const session = await getSession(request.headers.get("Cookie"));
-  const body = await request.json();
-  session.set('userId', body.userId);
-  session.set('email', body.email);
-  return json({ status: 'success' }, {
-    headers: {
-      "Set-Cookie": await commitSession(session),
-    },
-  })
-};
+// app/routes/login.tsx
+export default function Login() {
+  return (
+    <Form action="/auth/auth0" method="post">
+      <button>Login with Auth0</button>
+    </Form>
+  );
+}

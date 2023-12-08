@@ -1,6 +1,6 @@
 import { LoaderFunction, json, redirect } from "@remix-run/node";
 import { createClient } from "redis";
-import { getSession } from "~/sessions";
+import { authenticator } from "~/auth.server";
 
 async function exchangeToken(publicToken: string) {
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/item/public_token/exchange`, {
@@ -32,10 +32,9 @@ async function saveAccessToken(userId: string, itemId: string, accessToken: stri
 }
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const session = await getSession(request.headers.get("Cookie"));
-  const userId = session.get('userId') || '';
-  if (!userId) {
-    return json({ error: 'Not logged in' }, { status: 401 });
+  const user = await authenticator.isAuthenticated(request);
+  if (!user) {
+    return redirect('/login');
   }
   const url = new URL(request.url);
   const publicToken = url.searchParams.get('public_token');
@@ -48,7 +47,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   console.log('exchange', exchange);
 
   // Save the access token
-  await saveAccessToken(userId, exchange.item_id, exchange.access_token);
+  await saveAccessToken(user.userId, exchange.item_id, exchange.access_token);
 
   // Redirect to the Plaid Link API with the token
   return redirect(`/`);

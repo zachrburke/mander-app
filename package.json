@@ -17,11 +17,12 @@
     "@remix-run/react": "^2.3.1",
     "cross-env": "^7.0.3",
     "dayjs": "^1.11.10",
-    "netlify-identity-widget": "^1.9.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-plaid-link": "^3.5.1",
     "redis": "^4.6.10",
+    "remix-auth": "^3.6.0",
+    "remix-auth-auth0": "^1.9.0",
     "shx": "^0.3.4"
   },
   "devDependencies": {

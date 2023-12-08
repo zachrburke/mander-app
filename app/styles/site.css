@@ -30,7 +30,6 @@ header {
 header h1 {
     grid-area: h1;
     margin: 0;
-    line-height: 1rem;
 }
 
 header .subheading {
@@ -48,8 +47,13 @@ header .login {
     grid-area: login;
     justify-self: end;
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: end;
+    flex-direction: column;
+    gap: 4px;
+}
+
+header .login p {
+    margin: 0;
 }
 
 button {

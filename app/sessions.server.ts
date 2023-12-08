@@ -1,16 +1,11 @@
 import { createCookieSessionStorage } from "@remix-run/node";
 
-type SessionData = {
+export type SessionData = {
   userId: string;
-  email: string;
+  displayName: string | null;
 };
 
-type SessionFlashData = {
-  error: string;
-};
-
-const { getSession, commitSession, destroySession } =
-  createCookieSessionStorage<SessionData, SessionFlashData>(
+export let sessionStorage = createCookieSessionStorage(
     {
       // a Cookie from `createCookie` or the CookieOptions to create one
       cookie: {
@@ -22,7 +17,7 @@ const { getSession, commitSession, destroySession } =
         //
         // expires: new Date(Date.now() + 60_000),
         httpOnly: true,
-        maxAge: 60,
+        maxAge: 36000,
         path: "/",
         sameSite: "lax",
         secrets: [process.env.SESSION_SECRET],
@@ -31,4 +26,4 @@ const { getSession, commitSession, destroySession } =
     }
   );
 
-export { getSession, commitSession, destroySession };
+export let { getSession, commitSession, destroySession } = sessionStorage;
