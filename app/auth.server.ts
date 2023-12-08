@@ -8,7 +8,7 @@ export const authenticator = new Authenticator<SessionData>(sessionStorage);
 
 let auth0Strategy = new Auth0Strategy(
   {
-    callbackURL: "http://localhost:3000/auth/callback",
+    callbackURL: process.env.AUTH0_CALLBACK_URL!,
     clientID: process.env.AUTH0_CLIENT_ID!,
     clientSecret: process.env.AUTH0_CLIENT_SECRET!,
     domain: process.env.AUTH0_DOMAIN!,
