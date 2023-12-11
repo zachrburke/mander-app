@@ -1,12 +1,27 @@
 @import "https://unpkg.com/open-props";
 
+:root {
+    --bg: #fff; /* Keeping the background white for a clean look */
+    --accent-bg: #fffbea; /* A very light yellow for subtle background accents */
+    --text: #212121; /* Retaining the original dark text color for readability */
+    --text-light: #585858; /* Keeping the lighter text color */
+    --border: #f2c4a8; /* A light, warm shade that complements both red and yellow */
+    --accent: #f2a65a; /* A vibrant, lighter shade of red */
+    --accent-light: #f8d0b3; /* A much lighter shade of the accent for subtle highlights */
+    --code: #d81b60; /* Retaining this as it's already a light red */
+    --preformatted: #444; /* Keeping this for good contrast in preformatted text */
+    --marked: #ffdd33; /* A bright yellow, ideal for highlights and marking */
+    --disabled: #efefef; /* Keeping this for disabled elements */
+}
+
 html, body {
     margin: 0;
     padding: 0;
-    font-family: sans-serif;
-    --heading-bg: var(--red-2);
+    font-family: 'Inconsolata', sans-serif;
+    --heading-bg: var(--accent-bg);
     --button-bg: var(--blue-6);
     --button-color: white;
+    color: var(--text);
 }
 
 .logo {
@@ -16,6 +31,7 @@ html, body {
 }
 
 header {
+    background-color: var(--accent-bg);
     display: grid;
     grid-template-columns: 64px 1fr;
     column-gap: 10px;
@@ -23,7 +39,7 @@ header {
     grid-template-areas: 
         "logo h1 login"
         "logo subheading login";
-    padding: 12px;
+    padding: var(--size-2);
     border-bottom: 1px solid #ccc;
 }
 
@@ -57,16 +73,17 @@ header .login p {
 }
 
 button {
-    background-color: var(--button-bg);
+    background-color: var(--accent);
     color: var(--button-color);
     border: none;
     border-radius: 5px;
     padding: 10px;
     cursor: pointer;
+    font-weight: bold;
 }
 
 main {
-    padding: 0 10px;
+    padding: 0 var(--size-2);
 }
 
 ul {
@@ -76,12 +93,13 @@ ul {
 
 .ribbon {
     background-color: var(--heading-bg);
+    border: 1px solid var(--border);
     margin-bottom: 10px;
-    padding: 0 var(--size-4);
+    padding: 0 var(--size-2);
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: var(--size-4);
-    text-transform: uppercase;
     letter-spacing: 0.015em;
-    margin: 0 -10px;
+    margin: 0 calc(-1 * var(--size-2));
 }

@@ -15,7 +15,6 @@ let auth0Strategy = new Auth0Strategy(
   },
   async ({ accessToken, refreshToken, extraParams, profile }) => {
     // Get the user data from your DB or API using the tokens and profile
-    console.log({ accessToken, refreshToken, extraParams, profile });
     return { userId: profile.id, displayName: profile.displayName };
   }
 );
