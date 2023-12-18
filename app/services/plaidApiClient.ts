@@ -106,6 +106,9 @@ export async function getTransactions(accessToken: string, startDate: string, en
       access_token: accessToken,
       start_date: startDate,
       end_date: endDate,
+      options: {
+        count: 500,
+      }
     }),
   });
 

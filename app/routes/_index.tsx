@@ -11,6 +11,7 @@ import styles from '~/styles/_index.css';
 import { useState } from "react";
 import dayjs from "dayjs";
 import { authenticator } from "~/auth.server";
+import { getLinkedItems } from "~/services/linkedItemService";
 
 export const meta: MetaFunction = () => {
   return [
@@ -36,27 +37,16 @@ export const loader: LoaderFunction = async ({ request, context }) => {
   const items = await getLinkedItems(user.userId);
   const allAccounts = [];
   const allTransactions = [];
-  for (const item of items) {
-    const accounts = await plaidApi.getAccounts(item.accessToken);
-    const transactions = await plaidApi.getTransactions(item.accessToken, start, end);
+  for await (const item of items) {
+    const [accounts, transactions] = await Promise.all([
+      plaidApi.getAccounts(item.accessToken),
+      plaidApi.getTransactions(item.accessToken, start, end)
+    ]);
     allAccounts.push(...accounts);
     allTransactions.push(...transactions);
   }
   return { linkToken, allAccounts, allTransactions };
 };
-
-async function getLinkedItems(userId: string) {
-  const client = createClient({ url: process.env.REDIS_URL });
-  await client.connect();
-  const itemIds = await client.sMembers(`user:${userId}:items`);
-  const items = [];
-  for (const itemId of itemIds) {
-    const item = await client.hGetAll(`user:${userId}:${itemId}`);
-    items.push(item);
-  }
-  client.quit();
-  return items;
-}
 
 function breakdownByCategory(transactions: plaidApi.Transaction[]) {
   return transactions.reduce((categories: { [key: string]: number }, transaction: plaidApi.Transaction) => {
@@ -119,35 +109,37 @@ export default function Index() {
         Showing transactions from {period} 
         {categoryFilter && <strong> for {categoryFilter}</strong>}
       </p>
-      <h3 className="ribbon">Breakdown by category</h3>
-      <table className="breakdown">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Amount</th>
-            <th>
-              <a href="#transactions" onClick={() => setCategoryFilter(null)}>Clear</a>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(breakdownByCategory(data.allTransactions)).map(([category, amount]) => (
-            <tr key={category}>
-              <td>{category}</td>
-              <td>{formatCurrency(amount, 'USD')}</td>
-              <td>
-                <a href="#transactions" onClick={() => setCategoryFilter(category)}>Filter</a>
-              </td>
+      <details open> 
+        <summary>Breakdown by Category</summary>
+        <table className="breakdown">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>
+                <a href="#transactions" onClick={() => setCategoryFilter(null)}>Clear</a>
+              </th>
             </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <th>Total</th>
-            <th>{formatCurrency(data.allTransactions.reduce((sum: number, transaction: plaidApi.Transaction) => sum - transaction.amount, 0), 'USD')}</th>
-          </tr>
-        </tfoot>
-      </table>
+          </thead>
+          <tbody>
+            {Object.entries(breakdownByCategory(data.allTransactions)).map(([category, amount]) => (
+              <tr key={category}>
+                <td>{category}</td>
+                <td>{formatCurrency(amount, 'USD')}</td>
+                <td>
+                  <a href="#transactions" onClick={() => setCategoryFilter(category)}>Filter</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th>Total</th>
+              <th colSpan={2}>{formatCurrency(data.allTransactions.reduce((sum: number, transaction: plaidApi.Transaction) => sum - transaction.amount, 0), 'USD')}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </details>
       <ul className="transaction-list">
         {transactions.map((transaction: plaidApi.Transaction) => (
           <li key={transaction.transaction_id}>
