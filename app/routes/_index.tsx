@@ -45,7 +45,7 @@ export const loader: LoaderFunction = async ({ request, context }) => {
     allAccounts.push(...accounts);
     allTransactions.push(...transactions);
   }
-  return { linkToken, allAccounts, allTransactions };
+  return { linkToken, allAccounts, allTransactions, period };
 };
 
 function breakdownByCategory(transactions: plaidApi.Transaction[]) {
@@ -106,7 +106,7 @@ export default function Index() {
           <input type="month" name="period" defaultValue={period} />
           <button>Go</button>
         </form>
-        Showing transactions from {period} 
+        Showing transactions from {dayjs(period).format('MMMM, YYYY')} 
         {categoryFilter && <strong> for {categoryFilter}</strong>}
       </p>
       <details open> 

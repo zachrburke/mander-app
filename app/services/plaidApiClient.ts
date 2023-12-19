@@ -108,6 +108,7 @@ export async function getTransactions(accessToken: string, startDate: string, en
       end_date: endDate,
       options: {
         count: 500,
+        days_requested: 730,
       }
     }),
   });

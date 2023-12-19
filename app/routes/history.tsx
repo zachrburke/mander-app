@@ -10,22 +10,26 @@ export const loader: LoaderFunction = async ({ request, context }) => {
   const user = await authenticator.isAuthenticated(request);
   if (!user) return redirect('/login');
 
-  const start = dayjs().subtract(1, 'year').startOf('month').format('YYYY-MM-DD');
-  const end = dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
+  const months = [...Array(12)].map((_, i) => {
+    const index = i + 1;
+    const start = dayjs().subtract(index, 'month').startOf('month').format('YYYY-MM-DD');
+    const end = dayjs().subtract(index, 'month').endOf('month').format('YYYY-MM-DD');
+    return { start, end };
+  });
 
   const linkedItems = await getLinkedItems(user.userId);
-  const allTransactions = [];
-  for await (const item of linkedItems) {
-    const transactions = await plaidApi.getTransactions(item.accessToken, start, end);
-    allTransactions.push(...transactions);
-  }
+  const transactionsByItem = await Promise.all(linkedItems.map(async item => {
+    const transactionsByMonth = await Promise.all(months.map(month => plaidApi.getTransactions(item.accessToken, month.start, month.end)));
+    return transactionsByMonth.flat();
+  }));
   const netWorth = await getNetWorth(user.userId);
-  return json({ allTransactions, netWorth })
+  return json({ allTransactions: transactionsByItem.flat(), netWorth })
 };
 
 export const action: ActionFunction = async ({ request, context }) => {
 
 }
+
 
 async function getNetWorth(userId: string) {
   const linkedItems = await getLinkedItems(userId);
@@ -74,7 +78,9 @@ export default function History() {
         <tbody>
           {Object.keys(breakdown).map(month => (
             <tr key={month}>
-              <td>{month}</td>
+              <td>
+                <a href={`/?period=${month}`}>{dayjs(month).format('MMMM, YYYY')}</a>
+              </td>
               <td>{formatCurrency(breakdown[month], 'USD')}</td>
             </tr>
           ))}
