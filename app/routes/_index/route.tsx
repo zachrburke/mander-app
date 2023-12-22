@@ -5,13 +5,15 @@ import {
   PlaidLinkOptions,
   PlaidLinkOnSuccess,
 } from 'react-plaid-link';
-import { createClient } from "../lib/redis.server";
+import { createClient } from "../../redis.server";
 import * as plaidApi from "~/services/plaidApiClient";
-import styles from '~/styles/_index.css';
+import styles from './styles.css';
 import { useState } from "react";
 import dayjs from "dayjs";
 import { authenticator } from "~/auth.server";
 import { getLinkedItems } from "~/services/linkedItemService";
+import TransactionView, { Transaction, transactionView } from "~/components/transactionView";
+import { load } from "~/services/transactions";
 
 export const meta: MetaFunction = () => {
   return [
@@ -45,7 +47,16 @@ export const loader: LoaderFunction = async ({ request, context }) => {
     allAccounts.push(...accounts);
     allTransactions.push(...transactions);
   }
-  return { linkToken, allAccounts, allTransactions, period };
+  const mappedTransactions = allTransactions.map(transaction => ({
+    name: transaction.name,
+    amount: transaction.amount,
+    date: transaction.date,
+    category: transaction.category,
+    id: transaction.transaction_id,
+    logo: transaction.logo_url,
+  } as Transaction));
+  const events = await load(user.userId);
+  return { linkToken, allAccounts, allTransactions: mappedTransactions, period, events };
 };
 
 function breakdownByCategory(transactions: plaidApi.Transaction[]) {
@@ -67,18 +78,22 @@ export default function Index() {
   const { open, ready } = usePlaidLink(config);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const period = data.period || currentMonth();
-  const transactions = data.allTransactions.filter((transaction: plaidApi.Transaction) => {
+  const view = transactionView(data.events);
+  const transactions: Transaction[] = data.allTransactions.concat(view.transactions).filter((transaction: Transaction) => {
     if (categoryFilter) {
-      return transaction.category.includes(categoryFilter);
+      return transaction.category?.includes(categoryFilter);
+    }
+    if (view.deleted.includes(transaction.id)) {
+      return false;
     }
     return true;
-  });
+  }).sort(sortByDate);
   const netWorth = data.allAccounts.reduce((sum: number, account: plaidApi.Account) => {
     const balance = getBalance(account);
     return sum + balance;
   }, 0);
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
+    <div style={{ lineHeight: "1.8" }}>
       <h2 className="ribbon">
         Accounts
         <button onClick={() => open()} disabled={!ready}>Link a bank account</button>
@@ -102,7 +117,7 @@ export default function Index() {
         Transactions 
       </h2>
       <p>
-        <form>
+        <form className="period">
           <input type="month" name="period" defaultValue={period} />
           <button>Go</button>
         </form>
@@ -140,10 +155,17 @@ export default function Index() {
           </tfoot>
         </table>
       </details>
+      <div className="add-transaction">
+        See something missing? <a href="/transactions/add">Add it!</a>
+      </div>
       <ul className="transaction-list">
-        {transactions.map((transaction: plaidApi.Transaction) => (
-          <li key={transaction.transaction_id}>
-            <TransactionView transaction={transaction} />
+        {transactions.map((transaction: Transaction) => (
+          <li key={transaction.id}>
+            <TransactionView 
+              transaction={transaction} 
+              categoryLookup={view.categories} 
+              deletedCategoryLookup={view.deletedCategoryLookup} 
+            />
             <details hidden>
               <summary>Code</summary>
               <pre>{JSON.stringify(transaction, null, 2)}</pre>
@@ -153,6 +175,10 @@ export default function Index() {
       </ul>
     </div>
   );
+}
+
+const sortByDate = (a: Transaction, b: Transaction) => {
+  return dayjs(a.date).isBefore(dayjs(b.date)) ? 1 : -1;
 }
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -182,14 +208,14 @@ const AccountView = ({ account }: { account: plaidApi.Account }) => {
   );
 }
 
-const TransactionView = ({ transaction }: { transaction: plaidApi.Transaction }) => {
-  return (
-    <div className="transaction">
-      <h3 className="title">{transaction.name}</h3>
-      <img className="logo" src={transaction.logo_url} />
-      <span className="category">{transaction.category.join(', ')}</span>
-      <h3 className="amount">{formatCurrency(-transaction.amount, transaction.iso_currency_code)}</h3>
-      <span className="date">{transaction.date}</span>
-    </div>
-  );
-}
+// const TransactionView = ({ transaction }: { transaction: plaidApi.Transaction }) => {
+//   return (
+//     <div className="transaction">
+//       <h3 className="title">{transaction.name}</h3>
+//       <img className="logo" src={transaction.logo_url} />
+//       <span className="category">{transaction.category.join(', ')}</span>
+//       <h3 className="amount">{formatCurrency(-transaction.amount, transaction.iso_currency_code)}</h3>
+//       <span className="date">{transaction.date}</span>
+//     </div>
+//   );
+// }

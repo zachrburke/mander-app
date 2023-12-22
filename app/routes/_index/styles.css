@@ -1,0 +1,50 @@
+
+.account-balance {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+    .account-balance h3 {
+        margin: 0;
+    }
+
+.net-worth .account-balance {
+    border-color: var(--green-8);
+    box-shadow: 0 0 0 5px var(--green-1);
+}
+
+.net-worth h3 {
+    filter: drop-shadow(0 0 5px var(--green-1));
+}
+
+.account-list {
+    list-style: none;
+    gap: 10px;
+}
+
+@media screen and (min-width: 391px) {
+    .account-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+
+.breakdown th {
+    text-align: left;
+}
+
+form.period {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-column-gap: 10px;
+    margin-bottom: 10px;
+}
+
+.add-transaction {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: var(--size-2);
+    margin: var(--size-2) 0;
+}

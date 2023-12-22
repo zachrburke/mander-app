@@ -1,4 +1,4 @@
-import { createClient } from "~/lib/redis.server";
+import { createClient } from "~/redis.server";
 
 export async function getLinkedItems(userId: string) {
     const client = createClient({ url: process.env.REDIS_URL });

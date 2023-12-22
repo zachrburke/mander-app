@@ -12,6 +12,7 @@
     "redirects:disable": "shx rm -f public/_redirects"
   },
   "dependencies": {
+    "@heroicons/react": "^2.1.1",
     "@netlify/functions": "^2.0.0",
     "@netlify/remix-adapter": "^2.0.0",
     "@remix-run/react": "^2.3.1",
@@ -23,6 +24,7 @@
     "redis": "^4.6.10",
     "remix-auth": "^3.6.0",
     "remix-auth-auth0": "^1.9.0",
+    "remixicon": "^4.0.1",
     "shx": "^0.3.4"
   },
   "devDependencies": {

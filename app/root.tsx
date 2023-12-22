@@ -40,7 +40,9 @@ export default function App() {
       </head>
       <body>
         <header>
-          <img className="logo" src="/logo.png" alt="Mander" />
+          <a href="/">
+            <img className="logo" src="/logo.png" alt="Mander" />
+          </a>
           <h1>Mander</h1>
           <LoginView user={user} />
         </header>
