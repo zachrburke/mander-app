@@ -78,7 +78,7 @@ export default function Index() {
       </fieldset>
       <h2>Recently Added</h2>
       <ul>
-        {view.transactions.filter(x => !view.deletedTransactions.includes(x.id)).sort(sortByDate).map(transaction => (
+        {view.transactions.sort(sortByDate).map(transaction => (
           <li key={transaction.id}>
             <TransactionView transaction={transaction} categoryLookup={view.personalCategoryLookup} />
           </li>
