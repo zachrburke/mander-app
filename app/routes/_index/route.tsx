@@ -60,12 +60,54 @@ export const loader: LoaderFunction = async ({ request, context }) => {
   return { linkToken, allAccounts, allTransactions: mappedTransactions, period, events };
 };
 
-function breakdownByCategory(transactions: plaidApi.Transaction[]) {
-  return transactions.reduce((categories: { [key: string]: number }, transaction: plaidApi.Transaction) => {
-    const category = transaction.category[0];
+function breakdownByCategory(transactions: Transaction[]) {
+  return transactions.reduce((categories: { [key: string]: number }, transaction: Transaction) => {
+    const category = transaction.category?.[0] || 'Uncategorized';
     categories[category] = (categories[category] || 0) - transaction.amount;
     return categories;
   }, {});
+}
+
+const needsCategories = [
+  'Food',
+  'Housing',
+  'Utilities',
+  'Transportation',
+  'Healthcare',
+  'Insurance',
+  'Childcare',
+  'Debt',
+  'Personal Care',
+  'Clothing',
+  'Education',
+  'Savings',
+  'Giving',
+  'Entertainment',
+  'Miscellaneous',
+  'Telecommunication Services',
+  'Loans and Mortgages',
+  'Gas Stations',
+  'Supermarkets and Groceries',
+  'Utilities',
+];
+
+function breakdown50_30_20(transactions: Transaction[]) {
+  const needs = transactions.filter(transaction => transaction.category?.some(category => needsCategories.includes(category)));
+  const needsAmount = needs.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const categoryBreakdown = Object.values(breakdownByCategory(transactions));
+  const spending = categoryBreakdown.filter(amount => amount < 0);
+  const totalSpending = -spending.reduce((sum, amount) => sum + amount, 0);
+  const wantsAmount = totalSpending - needsAmount;
+  const savings = Math.max(transactions.reduce((sum, transaction) => sum - transaction.amount, 0), 0);
+  return {
+    Needs: needsAmount,
+    Wants: wantsAmount,
+    Savings: savings,
+  }
+}
+
+function getPercentage(amount: number, total: number) {
+  return Math.round(amount / total * 100);
 }
 
 export default function Index() {
@@ -80,13 +122,10 @@ export default function Index() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const period = data.period || currentMonth();
   const view = buildPersonalizationView(data.events);
-  console.log('view', view);
-  const transactions: Transaction[] = data.allTransactions.concat(view.transactions).filter((transaction: Transaction) => {
+  let transactions = view.combineTransactionsForPeriod(data.allTransactions, period);
+  transactions = transactions.filter((transaction: Transaction) => {
     if (categoryFilter) {
       return transaction.category?.includes(categoryFilter);
-    }
-    if (view.deletedTransactions.includes(transaction.id)) {
-      return false;
     }
     return true;
   }).sort(sortByDate);
@@ -94,6 +133,9 @@ export default function Index() {
     const balance = getBalance(account);
     return sum + balance;
   }, 0);
+  const totalIncome = transactions
+    .filter(transaction => transaction.amount > 0)
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
   return (
     <div style={{ lineHeight: "1.8" }}>
       <h2 className="ribbon">
@@ -139,7 +181,7 @@ export default function Index() {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(breakdownByCategory(data.allTransactions)).map(([category, amount]) => (
+            {Object.entries(breakdownByCategory(transactions)).map(([category, amount]) => (
               <tr key={category}>
                 <td>{category}</td>
                 <td>{formatCurrency(amount, 'USD')}</td>
@@ -152,9 +194,28 @@ export default function Index() {
           <tfoot>
             <tr>
               <th>Total</th>
-              <th colSpan={2}>{formatCurrency(data.allTransactions.reduce((sum: number, transaction: plaidApi.Transaction) => sum - transaction.amount, 0), 'USD')}</th>
+              <th colSpan={2}>{formatCurrency(transactions.reduce((sum: number, transaction: Transaction) => sum - transaction.amount, 0), 'USD')}</th>
             </tr>
           </tfoot>
+        </table>
+      </details>
+      <details open>
+        <summary>50/30/20 Rule</summary>
+        <table className="breakdown">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(breakdown50_30_20(transactions)).map(([category, amount]) => (
+              <tr key={category}>
+                <td>{category}</td>
+                <td>{formatCurrency(amount, 'USD')} ({formatPercentage(amount, totalIncome)})</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </details>
       <div className="add-transaction">
@@ -185,6 +246,10 @@ const sortByDate = (a: Transaction, b: Transaction) => {
 
 const formatCurrency = (amount: number, currency: string) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+}
+
+const formatPercentage = (amount: number, total: number) => {
+  return `${getPercentage(amount, total)}%`;
 }
 
 const getBalance = (account: plaidApi.Account) => {

@@ -23,7 +23,6 @@ export class PersonalizationView {
     public transactions: Transaction[] = [], 
     public personalCategoryLookup: CategoryLookup = {},
     public deletedCategoryLookup: CategoryLookup = {},
-    public deletedTransactions: string[] = []
   ) {}
   hasPersonalCategory(transactionId: string, category: string): boolean {
     return this.personalCategoryLookup[transactionId]?.includes(category);
@@ -42,6 +41,23 @@ export class PersonalizationView {
     this.deletedCategoryLookup[transactionId] = this.deletedCategoryLookup[transactionId] || [];
     this.deletedCategoryLookup[transactionId].push(category);
     this.personalCategoryLookup[transactionId] = this.personalCategoryLookup[transactionId]?.filter(c => c !== category);
+  }
+  personalizeTransactions(transactions: Transaction[]): Transaction[] {
+    return transactions.map(transaction => {
+      const categories = this.personalCategoryLookup[transaction.id] || [];
+      const deletedCategories = this.deletedCategoryLookup[transaction.id] || [];
+      transaction.category = transaction.category?.filter(category => !deletedCategories.includes(category));
+      return {
+        ...transaction,
+        category: transaction.category?.concat(categories) || categories,
+      };
+    });
+  }
+  combineTransactionsForPeriod(transactions: Transaction[], period: string): Transaction[] {
+    const transactionsForPeriod = this.transactions.filter(transaction => {
+      return dayjs(transaction.date).month() === dayjs(period).month();
+    });
+    return this.personalizeTransactions(transactions).concat(transactionsForPeriod);
   }
 }
 
