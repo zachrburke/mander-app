@@ -91,6 +91,10 @@ ul {
     padding: 0;
 }
 
+[hidden] {
+    display: none;
+}
+
 .ribbon {
     background-color: var(--heading-bg);
     border: 1px solid var(--border);
@@ -233,6 +237,10 @@ fieldset {
     border-radius: 5px;
     padding: var(--size-2);
     margin-bottom: var(--size-2);
+}
+
+fieldset:disabled {
+    opacity: 0.5;
 }
 
 fieldset legend {

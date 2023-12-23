@@ -12,7 +12,7 @@ import { useState } from "react";
 import dayjs from "dayjs";
 import { authenticator } from "~/auth.server";
 import { getLinkedItems } from "~/services/linkedItemService";
-import TransactionView, { Transaction, transactionView } from "~/components/transactionView";
+import TransactionView, { Transaction, buildPersonalizationView } from "~/components/transactionView";
 import { load } from "~/services/transactions";
 
 export const meta: MetaFunction = () => {
@@ -54,6 +54,7 @@ export const loader: LoaderFunction = async ({ request, context }) => {
     category: transaction.category,
     id: transaction.transaction_id,
     logo: transaction.logo_url,
+    canDelete: false,
   } as Transaction));
   const events = await load(user.userId);
   return { linkToken, allAccounts, allTransactions: mappedTransactions, period, events };
@@ -78,12 +79,13 @@ export default function Index() {
   const { open, ready } = usePlaidLink(config);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const period = data.period || currentMonth();
-  const view = transactionView(data.events);
+  const view = buildPersonalizationView(data.events);
+  console.log('view', view);
   const transactions: Transaction[] = data.allTransactions.concat(view.transactions).filter((transaction: Transaction) => {
     if (categoryFilter) {
       return transaction.category?.includes(categoryFilter);
     }
-    if (view.deleted.includes(transaction.id)) {
+    if (view.deletedTransactions.includes(transaction.id)) {
       return false;
     }
     return true;
@@ -163,7 +165,7 @@ export default function Index() {
           <li key={transaction.id}>
             <TransactionView 
               transaction={transaction} 
-              categoryLookup={view.categories} 
+              categoryLookup={view.personalCategoryLookup} 
               deletedCategoryLookup={view.deletedCategoryLookup} 
             />
             <details hidden>
@@ -207,15 +209,3 @@ const AccountView = ({ account }: { account: plaidApi.Account }) => {
     </div>
   );
 }
-
-// const TransactionView = ({ transaction }: { transaction: plaidApi.Transaction }) => {
-//   return (
-//     <div className="transaction">
-//       <h3 className="title">{transaction.name}</h3>
-//       <img className="logo" src={transaction.logo_url} />
-//       <span className="category">{transaction.category.join(', ')}</span>
-//       <h3 className="amount">{formatCurrency(-transaction.amount, transaction.iso_currency_code)}</h3>
-//       <span className="date">{transaction.date}</span>
-//     </div>
-//   );
-// }

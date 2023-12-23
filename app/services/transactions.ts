@@ -71,7 +71,7 @@ export type Events = TransactionAdded
   | CategoryRemoved
   | TransactionRemoved;
 
-type Commands = AddTransaction
+export type Commands = AddTransaction
   | CategorizeTransaction
   | RemoveCategory
   | RemoveTransaction
