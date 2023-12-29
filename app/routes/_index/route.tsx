@@ -6,14 +6,18 @@ import {
   PlaidLinkOnSuccess,
 } from 'react-plaid-link';
 import { createClient } from "../../redis.server";
+import Chart, { DoughnutController } from 'chart.js/auto';
+import { Doughnut } from 'react-chartjs-2';
 import * as plaidApi from "~/services/plaidApiClient";
 import styles from './styles.css';
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { authenticator } from "~/auth.server";
 import { getLinkedItems } from "~/services/linkedItemService";
 import TransactionView, { Transaction, buildPersonalizationView } from "~/components/transactionView";
 import { load } from "~/services/transactions";
+
+Chart.register(DoughnutController);
 
 export const meta: MetaFunction = () => {
   return [
@@ -47,17 +51,8 @@ export const loader: LoaderFunction = async ({ request, context }) => {
     allAccounts.push(...accounts);
     allTransactions.push(...transactions);
   }
-  const mappedTransactions = allTransactions.map(transaction => ({
-    name: transaction.name,
-    amount: transaction.amount,
-    date: transaction.date,
-    category: transaction.category,
-    id: transaction.transaction_id,
-    logo: transaction.logo_url,
-    canDelete: false,
-  } as Transaction));
   const events = await load(user.userId);
-  return { linkToken, allAccounts, allTransactions: mappedTransactions, period, events };
+  return { linkToken, allAccounts, allTransactions, period, events };
 };
 
 function breakdownByCategory(transactions: Transaction[]) {
@@ -129,34 +124,38 @@ export default function Index() {
     }
     return true;
   }).sort(sortByDate);
-  const netWorth = data.allAccounts.reduce((sum: number, account: plaidApi.Account) => {
+  const netWorth = data.allAccounts.reduce((sum: number, account: plaidApi.PlaidAccountResponse) => {
     const balance = getBalance(account);
     return sum + balance;
   }, 0);
   const totalIncome = transactions
     .filter(transaction => transaction.amount > 0)
     .reduce((sum, transaction) => sum + transaction.amount, 0);
+  const categoryBreakdown = breakdownByCategory(transactions);
   return (
     <div style={{ lineHeight: "1.8" }}>
+      <div className="net-worth">
+        <div className="account-balance">
+          <h3>
+            <u>{formatCurrency(netWorth, 'USD')}</u>
+          </h3>
+          <i>Net Worth</i>
+        </div>
+      </div>
       <h2 className="ribbon">
         Accounts
         <button onClick={() => open()} disabled={!ready}>Link a bank account</button>
       </h2>
-      <ul className="account-list">
-        <li className="net-worth">
-          <div className="account-balance">
-            <h3>
-              <u>{formatCurrency(netWorth, 'USD')}</u>
-            </h3>
-            <i>Net Worth</i>
-          </div>
-        </li>
-        {data.allAccounts.map((account: plaidApi.Account) => (
-          <li key={account.account_id}>
-            <AccountView account={account} />
-          </li>
-        ))}
-      </ul>
+      <details>
+        <summary>View {data.allAccounts.length} Accounts</summary>
+        <ul className="account-list">
+          {data.allAccounts.map((account: plaidApi.PlaidAccountResponse) => (
+            <li key={account.account_id}>
+              <AccountView account={account} />
+            </li>
+          ))}
+        </ul>
+      </details>
       <h2 className="ribbon" id="transactions">
         Transactions 
       </h2>
@@ -168,8 +167,27 @@ export default function Index() {
         Showing transactions from {dayjs(period).format('MMMM, YYYY')} 
         {categoryFilter && <strong> for {categoryFilter}</strong>}
       </p>
-      <details open> 
+      <details> 
         <summary>Breakdown by Category</summary>
+        <Doughnut data={{
+          labels: Object.keys(categoryBreakdown).filter(category => categoryBreakdown[category] < 0),
+          datasets: [{
+            data: Object.values(categoryBreakdown).filter(amount => amount < 0),
+            backgroundColor: [
+              'rgb(255, 99, 132)', //- A vibrant pink
+              'rgb(54, 162, 235)', //- A bright blue
+              'rgb(255, 206, 86)', //- A golden yellow
+              'rgb(75, 192, 192)', //- A soft turquoise
+              'rgb(153, 102, 255)', //- A light purple
+              'rgb(255, 159, 64)', //- A rich orange
+              'rgb(199, 199, 199)', //- A neutral grey
+              'rgb(116, 185, 255)', //- A sky blue
+              'rgb(255, 118, 117)', //- A coral red
+              'rgb(104, 109, 224)', //- A deep periwinkle
+            ],
+            hoverOffset: 4
+          }]
+        }} />
         <table className="breakdown">
           <thead>
             <tr>
@@ -181,7 +199,7 @@ export default function Index() {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(breakdownByCategory(transactions)).map(([category, amount]) => (
+            {Object.entries(categoryBreakdown).sort(sortCategoryByAmount).map(([category, amount]) => (
               <tr key={category}>
                 <td>{category}</td>
                 <td>{formatCurrency(amount, 'USD')}</td>
@@ -201,6 +219,18 @@ export default function Index() {
       </details>
       <details open>
         <summary>50/30/20 Rule</summary>
+        <Doughnut data={{
+          labels: Object.keys(breakdown50_30_20(transactions)),
+          datasets: [{
+            data: Object.values(breakdown50_30_20(transactions)),
+            backgroundColor: [
+              'rgb(255, 99, 132)',
+              'rgb(54, 162, 235)',
+              'rgb(255, 205, 86)',
+            ],
+            hoverOffset: 4
+          }]
+        }} />
         <table className="breakdown">
           <thead>
             <tr>
@@ -244,6 +274,10 @@ const sortByDate = (a: Transaction, b: Transaction) => {
   return dayjs(a.date).isBefore(dayjs(b.date)) ? 1 : -1;
 }
 
+const sortCategoryByAmount = ([aCategory, aAmount]: [string, number], [bCategory, bAmount]: [string, number]) => {
+  return aAmount > bAmount ? 1 : -1;
+}
+
 const formatCurrency = (amount: number, currency: string) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
 }
@@ -252,7 +286,7 @@ const formatPercentage = (amount: number, total: number) => {
   return `${getPercentage(amount, total)}%`;
 }
 
-const getBalance = (account: plaidApi.Account) => {
+const getBalance = (account: plaidApi.PlaidAccountResponse) => {
   return account.type === 'credit' ? -account.balances.current : account.balances.current;
 }
 
@@ -261,7 +295,7 @@ const currentMonth = () => {
   return `${now.getFullYear()}-${now.getMonth() + 1}`;
 }
 
-const AccountView = ({ account }: { account: plaidApi.Account }) => {
+const AccountView = ({ account }: { account: plaidApi.PlaidAccountResponse }) => {
   const balance = getBalance(account);
   return (
     <div className="account-balance">

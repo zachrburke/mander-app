@@ -10,6 +10,10 @@
         margin: 0;
     }
 
+.net-worth {
+    margin: var(--size-2);
+}
+
 .net-worth .account-balance {
     border-color: var(--green-8);
     box-shadow: 0 0 0 5px var(--green-1);

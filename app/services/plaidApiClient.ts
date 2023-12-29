@@ -1,4 +1,6 @@
-export type Account = {
+import { Transaction } from "~/components/transactionView";
+
+export type PlaidAccountResponse = {
   account_id: string;
   name: string;
   mask: string;
@@ -15,7 +17,7 @@ export type Balance = {
   unofficial_currency_code: string;
 };
 
-export type Transaction = {
+export type PlaidTransaction = {
   account_id: string;
   account_owner: string;
   amount: number;
@@ -77,7 +79,7 @@ export async function getLinkToken(userId: string) : Promise<string> {
   return json.link_token;
 }
 
-export async function getAccounts(accessToken: string) : Promise<Account[]> {
+export async function getAccounts(accessToken: string) : Promise<PlaidAccountResponse[]> {
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/accounts/get`, {
     method: 'POST',
     headers: {
@@ -114,6 +116,14 @@ export async function getTransactions(accessToken: string, startDate: string, en
   });
 
   const json = await response.json();
-
-  return json.transactions || [];
+  const transactions = json.transactions || [];
+  return transactions.map((t: PlaidTransaction) => ({
+    name: t.name,
+    amount: t.amount,
+    date: t.date,
+    category: t.category,
+    id: t.transaction_id,
+    logo: t.logo_url,
+    canDelete: false,
+  }));
 }

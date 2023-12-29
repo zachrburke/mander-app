@@ -41,8 +41,8 @@ async function getNetWorth(userId: string) {
   return allAccounts.reduce((sum, account) => sum + account.balances.current, 0);
 }
 
-function breakdownByMonth(transactions: plaidApi.Transaction[]) {
-  return transactions.reduce((months: { [key: string]: number }, transaction: plaidApi.Transaction) => {
+function breakdownByMonth(transactions: plaidApi.PlaidTransaction[]) {
+  return transactions.reduce((months: { [key: string]: number }, transaction: plaidApi.PlaidTransaction) => {
     const month = dayjs(transaction.date).format('YYYY-MM');
     months[month] = (months[month] || 0) - transaction.amount;
     return months;

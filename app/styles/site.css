@@ -77,7 +77,7 @@ button {
     color: var(--button-color);
     border: none;
     border-radius: 5px;
-    padding: 10px;
+    padding: 12px;
     cursor: pointer;
     font-weight: bold;
 }
@@ -98,14 +98,13 @@ ul {
 .ribbon {
     background-color: var(--heading-bg);
     border: 1px solid var(--border);
-    margin-bottom: 10px;
     padding: 0 var(--size-2);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--size-4);
     letter-spacing: 0.015em;
-    margin: 0 calc(-1 * var(--size-2));
+    margin: 10px calc(-1 * var(--size-2));
 }
 
 table {
@@ -209,11 +208,24 @@ label {
         justify-content: space-between;
     }
 
+    .transaction .categorize summary {
+        border: none;
+        margin: 0;
+        color: var(--accent);
+    }
+
     .transaction .categorize nav ul {
         display: flex;
         flex-wrap: wrap;
         gap: var(--size-2);
         margin: var(--size-2) 0;
+    }
+
+    .categorize form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: end;
+        gap: var(--size-2);
     }
 
 .transaction-list {

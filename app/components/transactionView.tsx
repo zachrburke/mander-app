@@ -158,9 +158,7 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
             <small>Category</small>
             <input type="text" name="category" />
           </label>
-          <div className="actions">
-            <button>Add</button>
-          </div>
+          <button>Add</button>
         </Form>
       </details>
     </fieldset>
