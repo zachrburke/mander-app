@@ -142,6 +142,7 @@ input, select {
     font-size: 1em;
     width: 100%;
     box-sizing: border-box;
+    appearance: none;
 }
 
 details {
