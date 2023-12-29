@@ -1,16 +1,10 @@
 import { type MetaFunction, type LoaderFunction, redirect, LinksFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import {
-  usePlaidLink,
-  PlaidLinkOptions,
-  PlaidLinkOnSuccess,
-} from 'react-plaid-link';
-import { createClient } from "../../redis.server";
 import Chart, { DoughnutController } from 'chart.js/auto';
 import { Doughnut } from 'react-chartjs-2';
 import * as plaidApi from "~/services/plaidApiClient";
 import styles from './styles.css';
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import dayjs from "dayjs";
 import { authenticator } from "~/auth.server";
 import { getLinkedItems } from "~/services/linkedItemService";
@@ -39,7 +33,6 @@ export const loader: LoaderFunction = async ({ request, context }) => {
   const period = url.searchParams.get('period') || currentMonth();
   const start = dayjs(period).startOf('month').format('YYYY-MM-DD');
   const end = dayjs(period).endOf('month').format('YYYY-MM-DD');
-  const linkToken = await plaidApi.getLinkToken(user.userId);
   const items = await getLinkedItems(user.userId);
   const allAccounts = [];
   const allTransactions = [];
@@ -52,7 +45,7 @@ export const loader: LoaderFunction = async ({ request, context }) => {
     allTransactions.push(...transactions);
   }
   const events = await load(user.userId);
-  return { linkToken, allAccounts, allTransactions, period, events };
+  return { allAccounts, allTransactions, period, events };
 };
 
 function breakdownByCategory(transactions: Transaction[]) {
@@ -107,13 +100,6 @@ function getPercentage(amount: number, total: number) {
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
-  const config: PlaidLinkOptions = {
-    onSuccess: (public_token, metadata) => {
-      window.location.href = `/complete-link-account?public_token=${public_token}`;
-    },
-    token: data.linkToken,
-  };
-  const { open, ready } = usePlaidLink(config);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const period = data.period || currentMonth();
   const view = buildPersonalizationView(data.events);
@@ -144,7 +130,7 @@ export default function Index() {
       </div>
       <h2 className="ribbon">
         Accounts
-        <button onClick={() => open()} disabled={!ready}>Link a bank account</button>
+        <a href="/plaid/link">Link Account</a>
       </h2>
       <details>
         <summary>View {data.allAccounts.length} Accounts</summary>

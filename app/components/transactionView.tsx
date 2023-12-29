@@ -141,7 +141,7 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
           <ul>
             {categories.map(category => (
               <li key={category}>
-                <Form method="post" action="/transactions/command" >
+                <Form method="post" action="/transactions/command" preventScrollReset={true}>
                   <input type="hidden" name="kind" value="remove-category" />
                   <input type="hidden" name="transactionId" value={transaction.id} />
                   <input type="hidden" name="category" value={category} />
@@ -151,7 +151,7 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
             ))}
           </ul>
         </nav>
-        <Form method="post" action="/transactions/command" >
+        <Form method="post" action="/transactions/command" preventScrollReset={true}>
           <input type="hidden" name="kind" value="categorize-transaction" />
           <input type="hidden" name="transactionId" value={transaction.id} />
           <label>
