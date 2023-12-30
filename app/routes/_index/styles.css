@@ -4,23 +4,57 @@
     border-radius: 5px;
     padding: 10px;
     margin-bottom: 10px;
+    display: grid;
+    align-items: center;
+    grid-template-columns: 64px 2fr 1fr;
+    grid-column-gap: 10px;
+    grid-template-areas: 
+        'logo bank-name balance'
+        'logo account-name account-name'
 }
 
     .account-balance h3 {
         margin: 0;
     }
 
+    .account-balance .logo {
+        grid-area: logo;
+        border-radius: 50%;
+        width: 64px;
+        height: 64px;
+    }
+
+    .account-balance svg.logo {
+        width: 48px;
+        height: 48px;
+        margin: 8px;
+    }
+
+    .account-balance .bank-name {
+        grid-area: bank-name;
+    }
+
+    .account-balance .account-name {
+        grid-area: account-name;
+    }
+
+    .account-balance .balance {
+        grid-area: balance;
+        text-align: right;
+    }
+
 .net-worth {
     margin: var(--size-2);
-}
-
-.net-worth .account-balance {
     border-color: var(--green-8);
     box-shadow: 0 0 0 5px var(--green-1);
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
 }
 
 .net-worth h3 {
     filter: drop-shadow(0 0 5px var(--green-1));
+    margin: 0;
 }
 
 .account-list {

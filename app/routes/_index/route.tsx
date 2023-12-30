@@ -6,10 +6,12 @@ import * as plaidApi from "~/services/plaidApiClient";
 import styles from './styles.css';
 import { useState } from "react";
 import dayjs from "dayjs";
+import { BuildingLibraryIcon } from "@heroicons/react/24/solid";
 import { authenticator } from "~/auth.server";
 import { getLinkedItems } from "~/services/linkedItemService";
 import TransactionView, { Transaction, buildPersonalizationView } from "~/components/transactionView";
 import { load } from "~/services/transactions";
+import { ManderAccount } from "~/services/plaidApiClient";
 
 Chart.register(DoughnutController);
 
@@ -110,7 +112,7 @@ export default function Index() {
     }
     return true;
   }).sort(sortByDate);
-  const netWorth = data.allAccounts.reduce((sum: number, account: plaidApi.PlaidAccountResponse) => {
+  const netWorth = data.allAccounts.reduce((sum: number, account: ManderAccount) => {
     const balance = getBalance(account);
     return sum + balance;
   }, 0);
@@ -121,12 +123,10 @@ export default function Index() {
   return (
     <div style={{ lineHeight: "1.8" }}>
       <div className="net-worth">
-        <div className="account-balance">
-          <h3>
-            <u>{formatCurrency(netWorth, 'USD')}</u>
-          </h3>
-          <i>Net Worth</i>
-        </div>
+        <h3>
+          <u>{formatCurrency(netWorth, 'USD')}</u>
+        </h3>
+        <i>Net Worth</i>
       </div>
       <h2 className="ribbon">
         Accounts
@@ -135,7 +135,7 @@ export default function Index() {
       <details>
         <summary>View {data.allAccounts.length} Accounts</summary>
         <ul className="account-list">
-          {data.allAccounts.map((account: plaidApi.PlaidAccountResponse) => (
+          {data.allAccounts.map((account: ManderAccount) => (
             <li key={account.account_id}>
               <AccountView account={account} />
             </li>
@@ -272,7 +272,7 @@ const formatPercentage = (amount: number, total: number) => {
   return `${getPercentage(amount, total)}%`;
 }
 
-const getBalance = (account: plaidApi.PlaidAccountResponse) => {
+const getBalance = (account: ManderAccount) => {
   return account.type === 'credit' ? -account.balances.current : account.balances.current;
 }
 
@@ -281,16 +281,15 @@ const currentMonth = () => {
   return `${now.getFullYear()}-${now.getMonth() + 1}`;
 }
 
-const AccountView = ({ account }: { account: plaidApi.PlaidAccountResponse }) => {
+const AccountView = ({ account }: { account: ManderAccount }) => {
   const balance = getBalance(account);
   return (
     <div className="account-balance">
-      <h3>{formatCurrency(balance, account.balances.iso_currency_code)}</h3>
-      <span>{account.name} *{account.mask}</span>
-      <details hidden>
-        <summary>Code</summary>
-        <pre>{JSON.stringify(account, null, 2)}</pre>
-      </details>
+      {account.institutionLogo && <img className="logo" src={`data:image/png;base64,${account.institutionLogo}`} alt={account.name} />}
+      {!account.institutionLogo && <BuildingLibraryIcon className="logo" />}
+      <h3 className="bank-name">{account.instituionName}</h3>
+      <h3 className="balance">{formatCurrency(balance, account.balances.iso_currency_code)}</h3>
+      <span className="account-name">{account.name} *{account.mask}</span>
     </div>
   );
 }

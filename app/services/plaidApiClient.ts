@@ -9,6 +9,15 @@ export type PlaidAccountResponse = {
   balances: Balance;
 };
 
+type PlaidAccountItem = {
+  available_products: string[];
+  billed_products: string[];
+  error: any;
+  institution_id: string;
+  item_id: string;
+  webhook: string;
+};
+
 export type Balance = {
   available: number;
   current: number;
@@ -49,6 +58,30 @@ export type PaymentMeta = {
   reference_number: string;
 };
 
+type PlaidInstituion = {
+  country_codes: string[];
+  credentials: any;
+  has_mfa: boolean;
+  institution_id: string;
+  mfa: string[];
+  name: string;
+  products: string[];
+  routing_numbers: string[];
+  status: string;
+  url: string;
+  logo: string;
+};
+
+export type ManderAccount = {
+  account_id: string;
+  instituionName: string;
+  institutionLogo: string;
+  name: string;
+  type: string;
+  mask: string;
+  balances: Balance;
+}
+
 export async function getLinkToken(userId: string) : Promise<string> {
   // Get the Plaid Link token
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/link/token/create`, {
@@ -79,7 +112,7 @@ export async function getLinkToken(userId: string) : Promise<string> {
   return json.link_token;
 }
 
-export async function getAccounts(accessToken: string) : Promise<PlaidAccountResponse[]> {
+export async function getAccounts(accessToken: string) : Promise<ManderAccount[]> {
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/accounts/get`, {
     method: 'POST',
     headers: {
@@ -93,7 +126,43 @@ export async function getAccounts(accessToken: string) : Promise<PlaidAccountRes
   });
 
   const json = await response.json();
-  return json.accounts || [];
+  const accounts = json.accounts || [];
+  const item: PlaidAccountItem = json.item || {};
+  let institution: PlaidInstituion;
+
+  try {
+    const institutionResponse = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/institutions/get_by_id`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: process.env.PLAID_CLIENT_ID,
+        secret: process.env.PLAID_CLIENT_SECRET,
+        institution_id: item.institution_id,
+        country_codes: ['US'],
+        options: {
+          include_optional_metadata: true,
+        },
+      }),
+    });
+
+    const institutionJson = await institutionResponse.json();
+    institution = institutionJson.institution || {};
+  }
+  catch (err) {
+    console.error('Unable to get institution info', err);
+  }
+
+  return accounts.map((a: PlaidAccountResponse) => ({
+    account_id: a.account_id,
+    instituionName: institution.name,
+    institutionLogo: institution.logo,
+    name: a.name,
+    type: a.type,
+    mask: a.mask,
+    balances: a.balances,
+  }));
 }
 
 export async function getTransactions(accessToken: string, startDate: string, endDate: string) : Promise<Transaction[]> {
