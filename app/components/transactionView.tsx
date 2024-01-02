@@ -11,11 +11,36 @@ export type Transaction = {
   category?: string[];
   logo?: string;
   canDelete: boolean;
+  isNeed: boolean;
 }
 
 export type CategoryLookup = {
   [key: string]: string[];
 }
+
+export const needsCategories = [
+  'Food',
+  'Housing',
+  'Utilities',
+  'Transportation',
+  'Healthcare',
+  'Insurance',
+  'Childcare',
+  'Debt',
+  'Personal Care',
+  'Clothing',
+  'Education',
+  'Savings',
+  'Giving',
+  'Entertainment',
+  'Miscellaneous',
+  'Telecommunication Services',
+  'Loans and Mortgages',
+  'Gas Stations',
+  'Supermarkets and Groceries',
+  'Utilities',
+  'Rent',
+];
 
 // This represents data a user has added to what is already being pulled from plaid
 export class PersonalizationView {
@@ -44,12 +69,14 @@ export class PersonalizationView {
   }
   personalizeTransactions(transactions: Transaction[]): Transaction[] {
     return transactions.map(transaction => {
-      const categories = this.personalCategoryLookup[transaction.id] || [];
+      let categories = this.personalCategoryLookup[transaction.id] || [];
       const deletedCategories = this.deletedCategoryLookup[transaction.id] || [];
       transaction.category = transaction.category?.filter(category => !deletedCategories.includes(category));
+      categories = [...categories, ...transaction.category || []];
       return {
         ...transaction,
-        category: transaction.category?.concat(categories) || categories,
+        category: categories,
+        isNeed: needsCategories.some(need => categories.includes(need)),
       };
     });
   }
@@ -84,6 +111,7 @@ export function buildPersonalizationView(events: Events[]) {
         date: event.date,
         category: [],
         canDelete: true,
+        isNeed: false,
       });
     } 
     else if (event.kind === 'transaction-categorized' && transaction) {
@@ -121,7 +149,12 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
     <fieldset className="transaction" disabled={fetcher.state !== 'idle'}>
       <h3 className="title">{transaction.name}</h3>
       <img className="logo" src={transaction.logo ?? '/logo.png'} />
-      <span className="category">{(categories.length && categories.join(', ')) || "Uncategorized"}</span>
+      <span className="category">
+        {!categories.length && <span className="empty">Uncategorized</span>}
+        {categories.map(category => (
+          <span className={needsCategories.includes(category) ? 'is-need' : ''} key={category}>{category}</span>
+        ))}
+      </span>
       <h3 className="amount">
         <Form method="post" action="/transactions/command" onSubmit={confirmDelete} >
           {formatCurrency(-transaction.amount)}
@@ -134,7 +167,6 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
           }
         </Form>
       </h3>
-      <span className="date">{dayjs(transaction.date).format('MMM D, YYYY')}</span>
       <details className="categorize">
         <summary>Categorize</summary>
         <nav>

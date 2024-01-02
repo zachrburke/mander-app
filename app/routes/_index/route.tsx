@@ -58,31 +58,8 @@ function breakdownByCategory(transactions: Transaction[]) {
   }, {});
 }
 
-const needsCategories = [
-  'Food',
-  'Housing',
-  'Utilities',
-  'Transportation',
-  'Healthcare',
-  'Insurance',
-  'Childcare',
-  'Debt',
-  'Personal Care',
-  'Clothing',
-  'Education',
-  'Savings',
-  'Giving',
-  'Entertainment',
-  'Miscellaneous',
-  'Telecommunication Services',
-  'Loans and Mortgages',
-  'Gas Stations',
-  'Supermarkets and Groceries',
-  'Utilities',
-];
-
 function breakdown50_30_20(transactions: Transaction[]) {
-  const needs = transactions.filter(transaction => transaction.category?.some(category => needsCategories.includes(category)));
+  const needs = transactions.filter(transaction => transaction.isNeed);
   const needsAmount = needs.reduce((sum, transaction) => sum + transaction.amount, 0);
   const categoryBreakdown = Object.values(breakdownByCategory(transactions));
   const spending = categoryBreakdown.filter(amount => amount < 0);
@@ -116,10 +93,14 @@ export default function Index() {
     const balance = getBalance(account);
     return sum + balance;
   }, 0);
-  const totalIncome = transactions
-    .filter(transaction => transaction.amount > 0)
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
   const categoryBreakdown = breakdownByCategory(transactions);
+  const totalIncome = Object.entries(categoryBreakdown).filter(([category, amount]) => amount > 0).reduce((sum, [category, amount]) => sum + amount, 0);
+  const transactionsByDate = transactions.reduce((acc: Record<string, Transaction[]>, transaction: Transaction) => {
+    const date = dayjs(transaction.date).format('YYYY-MM-DD');
+    acc[date] = acc[date] || [];
+    acc[date].push(transaction);
+    return acc;
+  }, {});
   return (
     <div style={{ lineHeight: "1.8" }}>
       <div className="net-worth">
@@ -237,21 +218,25 @@ export default function Index() {
       <div className="add-transaction">
         See something missing? <a href="/transactions/add">Add it!</a>
       </div>
-      <ul className="transaction-list">
-        {transactions.map((transaction: Transaction) => (
-          <li key={transaction.id}>
-            <TransactionView 
-              transaction={transaction} 
-              categoryLookup={view.personalCategoryLookup} 
-              deletedCategoryLookup={view.deletedCategoryLookup} 
-            />
-            <details hidden>
-              <summary>Code</summary>
-              <pre>{JSON.stringify(transaction, null, 2)}</pre>
-            </details>
-          </li>
-        ))}
-      </ul>
+      {transactions.length === 0 && <p>No transactions found for this period.</p>}
+      {Object.entries(transactionsByDate).map(([date, transactions]) => (
+        <details className="day-summary" key={date} open>
+          <summary>
+            <strong>{dayjs(date).format('MMMM D, YYYY')}</strong>
+          </summary>
+          <ul className="transaction-list">
+            {transactions.map((transaction: Transaction) => (
+              <li key={transaction.id}>
+                <TransactionView 
+                  transaction={transaction} 
+                  categoryLookup={view.personalCategoryLookup} 
+                  deletedCategoryLookup={view.deletedCategoryLookup} 
+                />
+              </li>
+            ))}
+          </ul>
+        </details>
+      ))}
     </div>
   );
 }

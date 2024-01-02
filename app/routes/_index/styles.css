@@ -86,3 +86,25 @@ form.period {
     padding: var(--size-2);
     margin: var(--size-2) 0;
 }
+
+.day-summary {
+    border-top: 1px solid #ccc;
+    margin-top: 32px;
+}
+
+    .day-summary > summary {
+        border: none;
+        position: relative;
+        top: -24px;
+        z-index: 1;
+        margin-bottom: -24px;
+    }
+
+    .day-summary > summary::marker {
+        display: none;
+    }
+
+    .day-summary > summary strong {
+        background: white;
+        padding: 0 var(--size-2);
+    }

@@ -66,15 +66,29 @@ export type TransactionRemoved = Event & {
   transactionId: string;
 }
 
+export type AddAutoCategorization = Command & {
+  kind: 'add-auto-categorization';
+  description: string;
+  category: string;
+}
+
+export type AutoCategorizationAdded = Event & {
+  kind: 'auto-categorization-added';
+  description: string;
+  category: string;
+}
+
 export type Events = TransactionAdded 
   | TransactionCategorized
   | CategoryRemoved
-  | TransactionRemoved;
+  | TransactionRemoved
+  | AutoCategorizationAdded;
 
 export type Commands = AddTransaction
   | CategorizeTransaction
   | RemoveCategory
   | RemoveTransaction
+  | AddAutoCategorization
   | UnknownCommand;
 
 
@@ -89,6 +103,8 @@ export function *handleCommand(command: Commands) : Generator<Events> {
       return yield { ...command, occurredAt, kind: 'category-removed' };
     case 'remove-transaction':
       return yield { ...command, occurredAt, kind: 'transaction-removed' };
+    case 'add-auto-categorization':
+      return yield { ...command, occurredAt, kind: 'auto-categorization-added' };
     default:
       throw new Error(`Unknown command kind: ${command.kind}`);
   }

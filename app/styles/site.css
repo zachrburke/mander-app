@@ -171,7 +171,7 @@ label {
     grid-column-gap: 10px;
     grid-template-areas:
         "logo title amount"
-        "logo category date"
+        "logo category category"
         "categorize categorize categorize";
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -202,6 +202,18 @@ label {
 
     .transaction h3 {
         margin: 0;
+    }
+
+    .transaction .category {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--size-2);
+    }
+
+    .transaction .is-need {
+        text-shadow: 0 0 5px var(--accent);
+        font-style: italic;
+
     }
 
     .transaction .amount form {
