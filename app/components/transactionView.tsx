@@ -1,6 +1,7 @@
 import { TrashIcon } from "@heroicons/react/24/solid";
 import { useFetcher } from "@remix-run/react";
 import dayjs from "dayjs";
+import { useState } from "react";
 import { Events } from "~/services/transactions";
 
 export type Transaction = {
@@ -129,6 +130,9 @@ export function buildPersonalizationView(events: Events[]) {
     else if (event.kind === 'transaction-removed') {
       view.transactions = view.transactions.filter(transaction => transaction.id !== event.transactionId);
     }
+    else if (event.kind === 'auto-categorization-added') {
+      view.addPersonalCategory(event.name, event.category);
+    }
     return view;
   }, initialView);
 }
@@ -139,10 +143,12 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
   deletedCategoryLookup?: CategoryLookup
 }) {
   const fetcher = useFetcher();
+  const [autoCategorize, setAutoCategorize] = useState(false);
   const Form = fetcher.Form;
   const deletedCategories = deletedCategoryLookup || {};
   let categories = transaction.category || [];
   categories = categories.concat(categoryLookup[transaction.id] || []);
+  categories = categories.concat(categoryLookup[transaction.name] || []);
   categories = categories.filter(category => !deletedCategories[transaction.id]?.includes(category));
   categories = categories.filter((category, index) => categories.indexOf(category) === index);
   return (
@@ -184,13 +190,18 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
           </ul>
         </nav>
         <Form method="post" action="/transactions/command" preventScrollReset={true}>
-          <input type="hidden" name="kind" value="categorize-transaction" />
+          <input type="hidden" name="kind" value={autoCategorize ? 'add-auto-categorization' : 'categorize-transaction'} />
           <input type="hidden" name="transactionId" value={transaction.id} />
+          <input type="hidden" name="name" value={transaction.name} />
           <label>
             <small>Category</small>
             <input type="text" name="category" />
           </label>
           <button>Add</button>
+          <label>
+          <input type="checkbox" name="autoCategorize" checked={autoCategorize} onChange={() => setAutoCategorize(!autoCategorize)} />
+              <span>Add for all <i>{transaction.name}</i>?</span>
+          </label>
         </Form>
       </details>
     </fieldset>

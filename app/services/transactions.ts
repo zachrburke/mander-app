@@ -68,13 +68,13 @@ export type TransactionRemoved = Event & {
 
 export type AddAutoCategorization = Command & {
   kind: 'add-auto-categorization';
-  description: string;
+  name: string;
   category: string;
 }
 
 export type AutoCategorizationAdded = Event & {
   kind: 'auto-categorization-added';
-  description: string;
+  name: string;
   category: string;
 }
 

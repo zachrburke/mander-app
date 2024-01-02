@@ -145,6 +145,13 @@ input, select {
     appearance: none;
 }
 
+input[type="checkbox"] {
+    appearance: checkbox;
+    scale: 1.5;
+    margin: var(--size-2);
+    width: auto;
+}
+
 details {
     margin-top: var(--size-1);
 }
