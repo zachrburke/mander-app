@@ -86,24 +86,30 @@ export type ManderAccount = {
 
 export async function getLinkToken(userId: string, accessToken?: string) : Promise<string> {
   // Get the Plaid Link token
+  const body: any = {
+    client_id: process.env.PLAID_CLIENT_ID,
+    secret: process.env.PLAID_CLIENT_SECRET,
+    client_name: 'Mander',
+    country_codes: ['US'],
+    language: 'en',
+    user: {
+      client_user_id: userId,
+    },
+    access_token: accessToken,
+  };
+  
+  if (!accessToken) {
+    body.products = ['transactions'];
+    body.optional_products = ['liabilities', 'investments'];
+  } else {
+    body.access_token = accessToken;
+  }
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/link/token/create`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      client_id: process.env.PLAID_CLIENT_ID,
-      secret: process.env.PLAID_CLIENT_SECRET,
-      client_name: 'Mander',
-      country_codes: ['US'],
-      language: 'en',
-      user: {
-        client_user_id: userId,
-      },
-      products: !accessToken && ['transactions'],
-      optional_products: !accessToken && ['liabilities', 'investments'],
-      access_token: accessToken,
-    }),
+    body: JSON.stringify(body),
   });
 
   const json = await response.json();
