@@ -130,7 +130,7 @@ export async function getAccounts(item: LinkedItem) : Promise<ManderAccount[]> {
 
   const json = await response.json();
 
-  if (response.status !== 200 && json.error_code !== 'ITEM_LOGIN_REQUIRED') {
+  if (response.status !== 200 && json.error_code === 'ITEM_LOGIN_REQUIRED') {
     console.error(json);
     return [
       {
