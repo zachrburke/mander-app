@@ -127,6 +127,7 @@ export async function getAccounts(accessToken: string) : Promise<ManderAccount[]
 
   if (response.status !== 200) {
     console.error(await response.json());
+    return [];
   }
 
   const json = await response.json();
