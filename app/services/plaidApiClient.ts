@@ -125,6 +125,10 @@ export async function getAccounts(accessToken: string) : Promise<ManderAccount[]
     }),
   });
 
+  if (response.status !== 200) {
+    console.error(await response.json());
+  }
+
   const json = await response.json();
   const accounts = json.accounts || [];
   const item: PlaidAccountItem = json.item || {};
