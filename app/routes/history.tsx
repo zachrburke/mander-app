@@ -35,7 +35,7 @@ async function getNetWorth(userId: string) {
   const linkedItems = await getLinkedItems(userId);
   const allAccounts = [];
   for await (const item of linkedItems) {
-    const accounts = await plaidApi.getAccounts(item.accessToken);
+    const accounts = await plaidApi.getAccounts(item);
     allAccounts.push(...accounts);
   }
   return allAccounts.reduce((sum, account) => sum + account.balances.current, 0);

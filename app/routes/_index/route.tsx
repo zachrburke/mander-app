@@ -40,7 +40,7 @@ export const loader: LoaderFunction = async ({ request, context }) => {
   const allTransactions = [];
   for await (const item of items) {
     const [accounts, transactions] = await Promise.all([
-      plaidApi.getAccounts(item.accessToken),
+      plaidApi.getAccounts(item),
       plaidApi.getTransactions(item.accessToken, start, end)
     ]);
     allAccounts.push(...accounts);
@@ -267,6 +267,14 @@ const currentMonth = () => {
 }
 
 const AccountView = ({ account }: { account: ManderAccount }) => {
+  if (account.account_id === 'fake-account-id') {
+    return (
+      <div className="account-relink">
+        <span>There was a problem getting an account.</span>
+        <a href={`/plaid/link?itemId=${account.itemId}`}>Reconnect your account</a>
+      </div>
+    )
+  }
   const balance = getBalance(account);
   return (
     <div className="account-balance">

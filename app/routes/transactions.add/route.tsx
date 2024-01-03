@@ -26,7 +26,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const items = await getLinkedItems(user.userId);
   const accounts = [];
   for await (const item of items) {
-    const accountsForItem = await plaidApi.getAccounts(item.accessToken);
+    const accountsForItem = await plaidApi.getAccounts(item);
     accounts.push(...accountsForItem);
   }
   const events = await load(user.userId);

@@ -1,4 +1,5 @@
 import { Transaction } from "~/components/transactionView";
+import { LinkedItem } from "./linkedItemService";
 
 export type PlaidAccountResponse = {
   account_id: string;
@@ -80,9 +81,10 @@ export type ManderAccount = {
   type: string;
   mask: string;
   balances: Balance;
+  itemId: string;
 }
 
-export async function getLinkToken(userId: string) : Promise<string> {
+export async function getLinkToken(userId: string, accessToken?: string) : Promise<string> {
   // Get the Plaid Link token
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/link/token/create`, {
     method: 'POST',
@@ -98,8 +100,9 @@ export async function getLinkToken(userId: string) : Promise<string> {
       user: {
         client_user_id: userId,
       },
-      products: ['transactions'],
-      optional_products: ['liabilities', 'investments'],
+      products: !accessToken && ['transactions'],
+      optional_products: !accessToken && ['liabilities', 'investments'],
+      access_token: accessToken,
     }),
   });
 
@@ -112,7 +115,7 @@ export async function getLinkToken(userId: string) : Promise<string> {
   return json.link_token;
 }
 
-export async function getAccounts(accessToken: string) : Promise<ManderAccount[]> {
+export async function getAccounts(item: LinkedItem) : Promise<ManderAccount[]> {
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/accounts/get`, {
     method: 'POST',
     headers: {
@@ -121,18 +124,36 @@ export async function getAccounts(accessToken: string) : Promise<ManderAccount[]
     body: JSON.stringify({
       client_id: process.env.PLAID_CLIENT_ID,
       secret: process.env.PLAID_CLIENT_SECRET,
-      access_token: accessToken,
+      access_token: item.accessToken,
     }),
   });
 
-  if (response.status !== 200) {
-    console.error(await response.json());
-    return [];
+  const json = await response.json();
+
+  if (response.status !== 200 && json.error_code !== 'ITEM_LOGIN_REQUIRED') {
+    console.error(json);
+    return [
+      {
+        account_id: 'fake-account-id',
+        instituionName: 'Fake Bank',
+        institutionLogo: 'https://cdn.pixabay.com/photo/2012/04/02/13/17/bank-24894_960_720.png',
+        name: 'Fake Account',
+        type: 'fake',
+        mask: '1234',
+        balances: {
+          available: 1000,
+          current: 1000,
+          iso_currency_code: 'USD',
+          limit: 0,
+          unofficial_currency_code: '',
+        },
+        itemId: item.itemId,
+      }
+    ]
   }
 
-  const json = await response.json();
   const accounts = json.accounts || [];
-  const item: PlaidAccountItem = json.item || {};
+  const accountItem: PlaidAccountItem = json.item || {};
   let institution: PlaidInstituion;
 
   try {
@@ -144,7 +165,7 @@ export async function getAccounts(accessToken: string) : Promise<ManderAccount[]
       body: JSON.stringify({
         client_id: process.env.PLAID_CLIENT_ID,
         secret: process.env.PLAID_CLIENT_SECRET,
-        institution_id: item.institution_id,
+        institution_id: accountItem.institution_id,
         country_codes: ['US'],
         options: {
           include_optional_metadata: true,
@@ -167,6 +188,7 @@ export async function getAccounts(accessToken: string) : Promise<ManderAccount[]
     type: a.type,
     mask: a.mask,
     balances: a.balances,
+    itemId: item.itemId,
   }));
 }
 
