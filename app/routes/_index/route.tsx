@@ -84,6 +84,9 @@ export default function Index() {
   const period = data.period || currentMonth();
   const view = buildPersonalizationView(data.events, [...data.allTransactions]);
   let transactions = view.transactions.filter((transaction: Transaction) => {
+    if (dayjs(transaction.date).format('YYYY-MM') !== period) {
+      return false;
+    }
     if (categoryFilter) {
       return transaction.category?.map(c => c.name).includes(categoryFilter);
     }
@@ -258,8 +261,7 @@ const getBalance = (account: ManderAccount) => {
 }
 
 const currentMonth = () => {
-  const now = new Date();
-  return `${now.getFullYear()}-${now.getMonth() + 1}`;
+  return dayjs().format('YYYY-MM');
 }
 
 const AccountView = ({ account }: { account: ManderAccount }) => {
