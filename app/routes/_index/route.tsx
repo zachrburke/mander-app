@@ -52,14 +52,14 @@ export const loader: LoaderFunction = async ({ request, context }) => {
 
 function breakdownByCategory(transactions: Transaction[]) {
   return transactions.reduce((categories: { [key: string]: number }, transaction: Transaction) => {
-    const category = transaction.category?.[0] || 'Uncategorized';
+    const category = transaction.category?.[0].name || 'Uncategorized';
     categories[category] = (categories[category] || 0) - transaction.amount;
     return categories;
   }, {});
 }
 
 function breakdown50_30_20(transactions: Transaction[]) {
-  const needs = transactions.filter(transaction => transaction.isNeed);
+  const needs = transactions.filter(transaction => transaction.category.some(category => category.isNeed));
   const needsAmount = needs.reduce((sum, transaction) => sum + transaction.amount, 0);
   const categoryBreakdown = Object.values(breakdownByCategory(transactions));
   const spending = categoryBreakdown.filter(amount => amount < 0);
@@ -74,18 +74,18 @@ function breakdown50_30_20(transactions: Transaction[]) {
 }
 
 function getPercentage(amount: number, total: number) {
-  return Math.round(amount / total * 100);
+  if (!total || !amount) return 0;
+  return Math.round(amount / total * 100) ?? 0;
 }
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const period = data.period || currentMonth();
-  const view = buildPersonalizationView(data.events);
-  let transactions = view.combineTransactionsForPeriod(data.allTransactions, period);
-  transactions = transactions.filter((transaction: Transaction) => {
+  const view = buildPersonalizationView(data.events, [...data.allTransactions]);
+  let transactions = view.transactions.filter((transaction: Transaction) => {
     if (categoryFilter) {
-      return transaction.category?.includes(categoryFilter);
+      return transaction.category?.map(c => c.name).includes(categoryFilter);
     }
     return true;
   }).sort(sortByDate);
@@ -227,11 +227,7 @@ export default function Index() {
           <ul className="transaction-list">
             {transactions.map((transaction: Transaction) => (
               <li key={transaction.id}>
-                <TransactionView 
-                  transaction={transaction} 
-                  categoryLookup={view.personalCategoryLookup} 
-                  deletedCategoryLookup={view.deletedCategoryLookup} 
-                />
+                <TransactionView transaction={transaction} />
               </li>
             ))}
           </ul>

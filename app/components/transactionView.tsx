@@ -9,7 +9,7 @@ export type Transaction = {
   name: string;
   amount: number;
   date: string;
-  category?: string[];
+  category: Category[];
   logo?: string;
   canDelete: boolean;
   isNeed: boolean;
@@ -17,6 +17,13 @@ export type Transaction = {
 
 export type CategoryLookup = {
   [key: string]: string[];
+}
+
+export type Category = {
+  name: string;
+  isNeed: boolean;
+  isAutoCategorized: boolean;
+  description?: string;
 }
 
 export const needsCategories = [
@@ -47,45 +54,18 @@ export const needsCategories = [
 export class PersonalizationView {
   constructor(
     public transactions: Transaction[] = [], 
-    public personalCategoryLookup: CategoryLookup = {},
-    public deletedCategoryLookup: CategoryLookup = {},
   ) {}
-  hasPersonalCategory(transactionId: string, category: string): boolean {
-    return this.personalCategoryLookup[transactionId]?.includes(category);
+  addCategory(transactionId: string, category: string, auto: boolean = false) {
+    const transaction = this.transactions.find(transaction => transaction.id === transactionId);
+    if (!transaction) return
+    transaction.category = [...transaction.category];
+    transaction.category.push({ name: category.trim(), isNeed: needsCategories.includes(category), isAutoCategorized: auto });
+    transaction.category = transaction.category.filter((category, index) => transaction.category?.indexOf(category) === index);
   }
-  hasDeletedCategory(transactionId: string, category: string): boolean {
-    return this.deletedCategoryLookup[transactionId]?.includes(category);
-  }
-  addPersonalCategory(transactionId: string, category: string) {
-    if (this.hasPersonalCategory(transactionId, category)) return;
-    this.personalCategoryLookup[transactionId] = this.personalCategoryLookup[transactionId] || [];
-    this.personalCategoryLookup[transactionId].push(category);
-    this.deletedCategoryLookup[transactionId] = this.deletedCategoryLookup[transactionId]?.filter(c => c !== category);
-  }
-  addDeletedCategory(transactionId: string, category: string) {
-    if (this.hasDeletedCategory(transactionId, category)) return;
-    this.deletedCategoryLookup[transactionId] = this.deletedCategoryLookup[transactionId] || [];
-    this.deletedCategoryLookup[transactionId].push(category);
-    this.personalCategoryLookup[transactionId] = this.personalCategoryLookup[transactionId]?.filter(c => c !== category);
-  }
-  personalizeTransactions(transactions: Transaction[]): Transaction[] {
-    return transactions.map(transaction => {
-      let categories = this.personalCategoryLookup[transaction.id] || [];
-      const deletedCategories = this.deletedCategoryLookup[transaction.id] || [];
-      transaction.category = transaction.category?.filter(category => !deletedCategories.includes(category));
-      categories = [...categories, ...transaction.category || []];
-      return {
-        ...transaction,
-        category: categories,
-        isNeed: needsCategories.some(need => categories.includes(need)),
-      };
-    });
-  }
-  combineTransactionsForPeriod(transactions: Transaction[], period: string): Transaction[] {
-    const transactionsForPeriod = this.transactions.filter(transaction => {
-      return dayjs(transaction.date).month() === dayjs(period).month();
-    });
-    return this.personalizeTransactions(transactions).concat(transactionsForPeriod);
+  removeCategory(transactionId: string, category: string) {
+    const transaction = this.transactions.find(transaction => transaction.id === transactionId);
+    if (!transaction) return;
+    transaction.category = transaction.category?.filter(c => c.name !== category);
   }
 }
 
@@ -100,10 +80,13 @@ function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
 
-export function buildPersonalizationView(events: Events[]) {
-  const initialView = new PersonalizationView();
+export function buildPersonalizationView(events: Events[], transactions: Transaction[] = []) {
+  const transactionsWithNeeds = transactions.map(transaction => {
+    transaction.category = transaction.category.map(category => ({ ...category, isNeed: needsCategories.includes(category.name), isAutoCategorized: false }));
+    return { ...transaction };
+  });
+  const initialView = new PersonalizationView(transactionsWithNeeds);
   return events.reduce((view, event) => {
-    const transaction = view.transactions.find(transaction => transaction.id === event.transactionId);
     if (event.kind === 'transaction-added') {
       view.transactions.push({
         id: event.transactionId,
@@ -115,50 +98,41 @@ export function buildPersonalizationView(events: Events[]) {
         isNeed: false,
       });
     } 
-    else if (event.kind === 'transaction-categorized' && transaction) {
-      transaction.category!.push(event.category);
+    else if (event.kind === 'transaction-categorized') {
+      view.addCategory(event.transactionId, event.category);
     }
-    else if (event.kind === 'category-removed' && transaction) {
-      transaction.category = transaction.category!.filter(category => category !== event.category);
-    }
-    else if (event.kind === 'transaction-categorized' && !transaction) {
-      view.addPersonalCategory(event.transactionId, event.category);
-    }
-    else if (event.kind === 'category-removed' && !transaction) {
-      view.addDeletedCategory(event.transactionId, event.category);
+    else if (event.kind === 'category-removed') {
+      view.removeCategory(event.transactionId, event.category);
     }
     else if (event.kind === 'transaction-removed') {
       view.transactions = view.transactions.filter(transaction => transaction.id !== event.transactionId);
     }
     else if (event.kind === 'auto-categorization-added') {
-      view.addPersonalCategory(event.name, event.category);
+      for (const transaction of view.transactions) {
+        if (transaction.name === event.name) {
+          view.addCategory(transaction.id, event.category, true);
+        }
+      }
     }
     return view;
   }, initialView);
 }
 
-export default function TransactionView({ transaction, categoryLookup, deletedCategoryLookup }: {
+export default function TransactionView({ transaction }: {
   transaction: Transaction, 
-  categoryLookup: CategoryLookup,
-  deletedCategoryLookup?: CategoryLookup
 }) {
   const fetcher = useFetcher();
   const [autoCategorize, setAutoCategorize] = useState(false);
   const Form = fetcher.Form;
-  const deletedCategories = deletedCategoryLookup || {};
-  let categories = transaction.category || [];
-  categories = categories.concat(categoryLookup[transaction.id] || []);
-  categories = categories.concat(categoryLookup[transaction.name] || []);
-  categories = categories.filter(category => !deletedCategories[transaction.id]?.includes(category));
-  categories = categories.filter((category, index) => categories.indexOf(category) === index);
+  let categories = transaction.category;
   return (
     <fieldset className="transaction" disabled={fetcher.state !== 'idle'}>
       <h3 className="title">{transaction.name}</h3>
       <img className="logo" src={transaction.logo ?? '/logo.png'} />
-      <span className="category">
+      <span className="categories">
         {!categories.length && <span className="empty">Uncategorized</span>}
-        {categories.map(category => (
-          <span className={needsCategories.includes(category) ? 'is-need' : ''} key={category}>{category}</span>
+        {categories.map((category, i) => (
+          <span className={`${category.isNeed ? 'is-need' : ''} category`} key={i}>{category.name}</span>
         ))}
       </span>
       <h3 className="amount">
@@ -178,12 +152,12 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
         <nav>
           <ul>
             {categories.map(category => (
-              <li key={category}>
+              <li key={category.name}>
                 <Form method="post" action="/transactions/command" preventScrollReset={true}>
                   <input type="hidden" name="kind" value="remove-category" />
                   <input type="hidden" name="transactionId" value={transaction.id} />
-                  <input type="hidden" name="category" value={category} />
-                  <button>Remove {category}</button>
+                  <input type="hidden" name="category" value={category.name} />
+                  <button>Remove {category.name}</button>
                 </Form>
               </li>
             ))}
@@ -199,8 +173,8 @@ export default function TransactionView({ transaction, categoryLookup, deletedCa
           </label>
           <button>Add</button>
           <label>
-          <input type="checkbox" name="autoCategorize" checked={autoCategorize} onChange={() => setAutoCategorize(!autoCategorize)} />
-              <span>Add for all <i>{transaction.name}</i>?</span>
+            <input type="checkbox" name="autoCategorize" checked={autoCategorize} onChange={() => setAutoCategorize(!autoCategorize)} />
+            <span>Add for all <i>{transaction.name}</i>?</span>
           </label>
         </Form>
       </details>

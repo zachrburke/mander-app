@@ -189,7 +189,7 @@ label {
     .transaction .logo { grid-area: logo; }
     .transaction .title { grid-area: title; }
     .transaction .amount { grid-area: amount; }
-    .transaction .category { grid-area: category; }
+    .transaction .categories { grid-area: category; }
     .transaction .date { grid-area: date; }
     .transaction .categorize { grid-area: categorize; }
 
@@ -211,12 +211,6 @@ label {
         margin: 0;
     }
 
-    .transaction .category {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--size-2);
-    }
-
     .transaction .is-need {
         text-shadow: 0 0 5px var(--accent);
         font-style: italic;
@@ -226,6 +220,10 @@ label {
     .transaction .amount form {
         display: flex;
         justify-content: space-between;
+    }
+
+    .category + .category::before {
+        content: ", ";
     }
 
     .transaction .categorize summary {

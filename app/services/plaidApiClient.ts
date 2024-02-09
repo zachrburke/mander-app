@@ -223,7 +223,7 @@ export async function getTransactions(accessToken: string, startDate: string, en
     name: t.name,
     amount: t.amount,
     date: t.date,
-    category: t.category,
+    category: t.category.map(c => ({ name: c, isAutoCategorized: false })),
     id: t.transaction_id,
     logo: t.logo_url,
     canDelete: false,
