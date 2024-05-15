@@ -38,7 +38,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body suppressHydrationWarning={true}>
         <header>
           <a href="/">
             <img className="logo" src="/logo.png" alt="Mander" />

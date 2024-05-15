@@ -129,14 +129,14 @@ export default function Index() {
       <h2 className="ribbon" id="transactions">
         Transactions 
       </h2>
-      <p>
+      <div>
         <form className="period">
           <input type="month" name="period" defaultValue={period} />
           <button>Go</button>
         </form>
         Showing transactions from {dayjs(period).format('MMMM, YYYY')} 
         {categoryFilter && <strong> for {categoryFilter}</strong>}
-      </p>
+      </div>
       <details> 
         <summary>Breakdown by Category</summary>
         <Doughnut data={{
@@ -265,7 +265,7 @@ const currentMonth = () => {
 }
 
 const AccountView = ({ account }: { account: ManderAccount }) => {
-  if (account.account_id === 'fake-account-id') {
+  if (account.account_id.includes('fake')) {
     return (
       <div className="account-relink">
         <span>There was a problem getting an account.</span>

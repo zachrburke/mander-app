@@ -140,7 +140,7 @@ export async function getAccounts(item: LinkedItem) : Promise<ManderAccount[]> {
     console.error(json);
     return [
       {
-        account_id: 'fake-account-id',
+        account_id: 'fake-account-id-' + item.itemId,
         instituionName: 'Fake Bank',
         institutionLogo: 'https://cdn.pixabay.com/photo/2012/04/02/13/17/bank-24894_960_720.png',
         name: 'Fake Account',
