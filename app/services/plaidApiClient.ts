@@ -84,7 +84,28 @@ export type ManderAccount = {
   itemId: string;
 }
 
-export async function getLinkToken(userId: string, accessToken?: string) : Promise<string> {
+export type TransactionSyncResult = {
+  accounts: ManderAccount[];
+  added: Transaction[];
+  modified: Transaction[];
+  removed: Transaction[];
+  cursor: string;
+  itemId: string;
+}
+
+function mapTransaction(t: PlaidTransaction): Transaction {
+  return {
+    name: t.name,
+    amount: t.amount,
+    date: t.date,
+    category: t.category.map(c => ({ name: c, isAutoCategorized: false })),
+    id: t.transaction_id,
+    logo: t.logo_url,
+    canDelete: false,
+  };
+}
+
+export async function getLinkToken(userId: string, accessToken?: string): Promise<string> {
   // Get the Plaid Link token
   const body: any = {
     client_id: process.env.PLAID_CLIENT_ID,
@@ -97,7 +118,7 @@ export async function getLinkToken(userId: string, accessToken?: string) : Promi
     },
     access_token: accessToken,
   };
-  
+
   if (!accessToken) {
     body.products = ['transactions'];
     body.optional_products = ['liabilities', 'investments'];
@@ -121,7 +142,7 @@ export async function getLinkToken(userId: string, accessToken?: string) : Promi
   return json.link_token;
 }
 
-export async function getAccounts(item: LinkedItem) : Promise<ManderAccount[]> {
+export async function getAccounts(item: LinkedItem): Promise<ManderAccount[]> {
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/accounts/get`, {
     method: 'POST',
     headers: {
@@ -198,7 +219,46 @@ export async function getAccounts(item: LinkedItem) : Promise<ManderAccount[]> {
   }));
 }
 
-export async function getTransactions(accessToken: string, startDate: string, endDate: string) : Promise<Transaction[]> {
+export async function syncTransactions(itemId: string, accessToken: string, cursor: string | null = null): Promise<TransactionSyncResult> {
+  const result = { added: [], modified: [], removed: [], accounts: [], cursor: cursor || '', itemId: itemId } as TransactionSyncResult;
+  console.log('Syncing transactions for item', itemId, cursor);
+  while (true) {
+    const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/transactions/sync`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: process.env.PLAID_CLIENT_ID,
+        secret: process.env.PLAID_CLIENT_SECRET,
+        access_token: accessToken,
+        cursor: cursor,
+        count: 500,
+      }),
+    });
+    const json = await response.json();
+    if (response.status !== 200) {
+      console.error(json);
+      throw new Error('Unable to sync transactions');
+    }
+    const added = json.added.map((t: PlaidTransaction) => mapTransaction(t));
+    const modified = json.modified.map((t: PlaidTransaction) => mapTransaction(t));
+    const removed = json.removed.map((t: PlaidTransaction) => mapTransaction(t));
+
+    result.added = result.added.concat(added);
+    result.modified = result.modified.concat(modified);
+    result.removed = result.removed.concat(removed);
+
+    cursor = json.next_cursor;
+    if (!json.has_more) break;
+  }
+  if (!cursor) throw new Error('No cursor found in Plaid response');
+  result.accounts = await getAccounts({ itemId, accessToken });
+  result.cursor = cursor;
+  return result;
+}
+
+export async function getTransactions(accessToken: string, startDate: string, endDate: string): Promise<Transaction[]> {
   const response = await fetch(`https://${process.env.PLAID_ENV}.plaid.com/transactions/get`, {
     method: 'POST',
     headers: {
@@ -219,13 +279,5 @@ export async function getTransactions(accessToken: string, startDate: string, en
 
   const json = await response.json();
   const transactions = json.transactions || [];
-  return transactions.map((t: PlaidTransaction) => ({
-    name: t.name,
-    amount: t.amount,
-    date: t.date,
-    category: t.category.map(c => ({ name: c, isAutoCategorized: false })),
-    id: t.transaction_id,
-    logo: t.logo_url,
-    canDelete: false,
-  }));
+  return transactions.map((t: PlaidTransaction) => mapTransaction(t));
 }

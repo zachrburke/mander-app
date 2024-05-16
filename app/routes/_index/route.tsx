@@ -4,7 +4,7 @@ import Chart, { DoughnutController } from 'chart.js/auto';
 import { Doughnut } from 'react-chartjs-2';
 import * as plaidApi from "~/services/plaidApiClient";
 import styles from './styles.css';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { BuildingLibraryIcon } from "@heroicons/react/24/solid";
 import { authenticator } from "~/auth.server";
@@ -12,6 +12,7 @@ import { getLinkedItems } from "~/services/linkedItemService";
 import TransactionView, { Transaction, buildPersonalizationView } from "~/components/transactionView";
 import { load } from "~/services/transactions";
 import { ManderAccount } from "~/services/plaidApiClient";
+import Import, { ItemData } from "../import";
 
 Chart.register(DoughnutController);
 
@@ -33,21 +34,22 @@ export const loader: LoaderFunction = async ({ request, context }) => {
   }
   const url = new URL(request.url);
   const period = url.searchParams.get('period') || currentMonth();
-  const start = dayjs(period).startOf('month').format('YYYY-MM-DD');
-  const end = dayjs(period).endOf('month').format('YYYY-MM-DD');
-  const items = await getLinkedItems(user.userId);
-  const allAccounts = [];
-  const allTransactions = [];
-  for await (const item of items) {
-    const [accounts, transactions] = await Promise.all([
-      plaidApi.getAccounts(item),
-      plaidApi.getTransactions(item.accessToken, start, end)
-    ]);
-    allAccounts.push(...accounts);
-    allTransactions.push(...transactions);
-  }
   const events = await load(user.userId);
-  return { allAccounts, allTransactions, period, events };
+  return { period, events };
+  // const start = dayjs(period).startOf('month').format('YYYY-MM-DD');
+  // const end = dayjs(period).endOf('month').format('YYYY-MM-DD');
+  // const items = await getLinkedItems(user.userId);
+  // const allAccounts = [];
+  // const allTransactions = [];
+  // for await (const item of items) {
+  //   const [accounts, transactions] = await Promise.all([
+  //     plaidApi.getAccounts(item),
+  //     plaidApi.getTransactions(item.accessToken, start, end)
+  //   ]);
+  //   allAccounts.push(...accounts);
+  //   allTransactions.push(...transactions);
+  // }
+  // return { allAccounts, allTransactions, period, events };
 };
 
 function breakdownByCategory(transactions: Transaction[]) {
@@ -80,9 +82,33 @@ function getPercentage(amount: number, total: number) {
 
 export default function Index() {
   const data = useLoaderData<typeof loader>();
+  const [itemData, setItemData] = useState<ItemData[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  useEffect(() => {
+    const currentItemData = localStorage.getItem('itemData');
+    if (currentItemData) {
+      setItemData(JSON.parse(currentItemData));
+    }
+    window.addEventListener('message', (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data.type == 'synced') {
+        const currentItemData = localStorage.getItem('itemData');
+        if (currentItemData) {
+          setItemData(JSON.parse(currentItemData));
+        }
+      }
+    });
+  }, []);
   const period = data.period || currentMonth();
-  const view = buildPersonalizationView(data.events, [...data.allTransactions]);
+  const allTransactions = itemData.reduce((acc, item) => {
+    acc.push(...item.transactions);
+    return acc;
+  }, [] as Transaction[]);
+  const allAccounts = itemData.reduce((acc, item) => {
+    acc.push(...item.accounts);
+    return acc;
+  }, [] as ManderAccount[]);
+  const view = buildPersonalizationView(data.events, [...allTransactions]);
   let transactions = view.transactions.filter((transaction: Transaction) => {
     if (dayjs(transaction.date).format('YYYY-MM') !== period) {
       return false;
@@ -92,7 +118,7 @@ export default function Index() {
     }
     return true;
   }).sort(sortByDate);
-  const netWorth = data.allAccounts.reduce((sum: number, account: ManderAccount) => {
+  const netWorth = allAccounts.reduce((sum: number, account: ManderAccount) => {
     const balance = getBalance(account);
     return sum + balance;
   }, 0);
@@ -106,6 +132,7 @@ export default function Index() {
   }, {});
   return (
     <div style={{ lineHeight: "1.8" }}>
+      <iframe src="/import" style={{ display: 'none' }} />
       <div className="net-worth">
         <h3>
           <u>{formatCurrency(netWorth, 'USD')}</u>
@@ -117,9 +144,9 @@ export default function Index() {
         <a href="/plaid/link">Link Account</a>
       </h2>
       <details>
-        <summary>View {data.allAccounts.length} Accounts</summary>
+        <summary>View {allAccounts.length} Accounts</summary>
         <ul className="account-list">
-          {data.allAccounts.map((account: ManderAccount) => (
+          {allAccounts.map((account: ManderAccount) => (
             <li key={account.account_id}>
               <AccountView account={account} />
             </li>
