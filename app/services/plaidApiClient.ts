@@ -89,7 +89,7 @@ export type TransactionSyncResult = {
   added: Transaction[];
   modified: Transaction[];
   removed: Transaction[];
-  cursor: string;
+  cursor: string | null;
   itemId: string;
 }
 
@@ -252,7 +252,6 @@ export async function syncTransactions(itemId: string, accessToken: string, curs
     cursor = json.next_cursor;
     if (!json.has_more) break;
   }
-  if (!cursor) throw new Error('No cursor found in Plaid response');
   result.accounts = await getAccounts({ itemId, accessToken });
   result.cursor = cursor;
   return result;
