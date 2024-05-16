@@ -127,115 +127,121 @@ export default function Index() {
         </ul>
       </details>
       <h2 className="ribbon" id="transactions">
-        Transactions 
+        Transactions
       </h2>
       <div>
         <form className="period">
           <input type="month" name="period" defaultValue={period} />
           <button>Go</button>
         </form>
-        Showing transactions from {dayjs(period).format('MMMM, YYYY')} 
+        Showing transactions from {dayjs(period).format('MMMM, YYYY')}
         {categoryFilter && <strong> for {categoryFilter}</strong>}
       </div>
-      <details> 
-        <summary>Breakdown by Category</summary>
-        <Doughnut data={{
-          labels: Object.keys(categoryBreakdown).filter(category => categoryBreakdown[category] < 0),
-          datasets: [{
-            data: Object.values(categoryBreakdown).filter(amount => amount < 0),
-            backgroundColor: [
-              'rgb(255, 99, 132)', //- A vibrant pink
-              'rgb(54, 162, 235)', //- A bright blue
-              'rgb(255, 206, 86)', //- A golden yellow
-              'rgb(75, 192, 192)', //- A soft turquoise
-              'rgb(153, 102, 255)', //- A light purple
-              'rgb(255, 159, 64)', //- A rich orange
-              'rgb(199, 199, 199)', //- A neutral grey
-              'rgb(116, 185, 255)', //- A sky blue
-              'rgb(255, 118, 117)', //- A coral red
-              'rgb(104, 109, 224)', //- A deep periwinkle
-            ],
-            hoverOffset: 4
-          }]
-        }} />
-        <table className="breakdown">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Amount</th>
-              <th>
-                <a href="#transactions" onClick={() => setCategoryFilter(null)}>Clear</a>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(categoryBreakdown).sort(sortCategoryByAmount).map(([category, amount]) => (
-              <tr key={category}>
-                <td>{category}</td>
-                <td>{formatCurrency(amount, 'USD')}</td>
-                <td>
-                  <a href="#transactions" onClick={() => setCategoryFilter(category)}>Filter</a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <th>Total</th>
-              <th colSpan={2}>{formatCurrency(transactions.reduce((sum: number, transaction: Transaction) => sum - transaction.amount, 0), 'USD')}</th>
-            </tr>
-          </tfoot>
-        </table>
-      </details>
-      <details open>
-        <summary>50/30/20 Rule</summary>
-        <Doughnut data={{
-          labels: Object.keys(breakdown50_30_20(transactions)),
-          datasets: [{
-            data: Object.values(breakdown50_30_20(transactions)),
-            backgroundColor: [
-              'rgb(255, 99, 132)',
-              'rgb(54, 162, 235)',
-              'rgb(255, 205, 86)',
-            ],
-            hoverOffset: 4
-          }]
-        }} />
-        <table className="breakdown">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(breakdown50_30_20(transactions)).map(([category, amount]) => (
-              <tr key={category}>
-                <td>{category}</td>
-                <td>{formatCurrency(amount, 'USD')} ({formatPercentage(amount, totalIncome)})</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
-      <div className="add-transaction">
-        See something missing? <a href="/transactions/add">Add it!</a>
+      <div className="transaction-grid">
+        <div>
+          <details>
+            <summary>Breakdown by Category</summary>
+            <Doughnut data={{
+              labels: Object.keys(categoryBreakdown).filter(category => categoryBreakdown[category] < 0),
+              datasets: [{
+                data: Object.values(categoryBreakdown).filter(amount => amount < 0),
+                backgroundColor: [
+                  'rgb(255, 99, 132)', //- A vibrant pink
+                  'rgb(54, 162, 235)', //- A bright blue
+                  'rgb(255, 206, 86)', //- A golden yellow
+                  'rgb(75, 192, 192)', //- A soft turquoise
+                  'rgb(153, 102, 255)', //- A light purple
+                  'rgb(255, 159, 64)', //- A rich orange
+                  'rgb(199, 199, 199)', //- A neutral grey
+                  'rgb(116, 185, 255)', //- A sky blue
+                  'rgb(255, 118, 117)', //- A coral red
+                  'rgb(104, 109, 224)', //- A deep periwinkle
+                ],
+                hoverOffset: 4
+              }]
+            }} />
+            <table className="breakdown">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>
+                    <a href="#transactions" onClick={() => setCategoryFilter(null)}>Clear</a>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(categoryBreakdown).sort(sortCategoryByAmount).map(([category, amount]) => (
+                  <tr key={category}>
+                    <td>{category}</td>
+                    <td>{formatCurrency(amount, 'USD')}</td>
+                    <td>
+                      <a href="#transactions" onClick={() => setCategoryFilter(category)}>Filter</a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>Total</th>
+                  <th colSpan={2}>{formatCurrency(transactions.reduce((sum: number, transaction: Transaction) => sum - transaction.amount, 0), 'USD')}</th>
+                </tr>
+              </tfoot>
+            </table>
+          </details>
+          <details open>
+            <summary>50/30/20 Rule</summary>
+            <Doughnut data={{
+              labels: Object.keys(breakdown50_30_20(transactions)),
+              datasets: [{
+                data: Object.values(breakdown50_30_20(transactions)),
+                backgroundColor: [
+                  'rgb(255, 99, 132)',
+                  'rgb(54, 162, 235)',
+                  'rgb(255, 205, 86)',
+                ],
+                hoverOffset: 4
+              }]
+            }} />
+            <table className="breakdown">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(breakdown50_30_20(transactions)).map(([category, amount]) => (
+                  <tr key={category}>
+                    <td>{category}</td>
+                    <td>{formatCurrency(amount, 'USD')} ({formatPercentage(amount, totalIncome)})</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+        </div>
+        <div>
+          <div className="add-transaction">
+            See something missing? <a href="/transactions/add">Add it!</a>
+          </div>
+          {transactions.length === 0 && <p>No transactions found for this period.</p>}
+          {Object.entries(transactionsByDate).map(([date, transactions]) => (
+            <details className="day-summary" key={date} open>
+              <summary>
+                <strong>{dayjs(date).format('MMMM D, YYYY')}</strong>
+              </summary>
+              <ul className="transaction-list">
+                {transactions.map((transaction: Transaction) => (
+                  <li key={transaction.id}>
+                    <TransactionView transaction={transaction} />
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ))}
+        </div>
       </div>
-      {transactions.length === 0 && <p>No transactions found for this period.</p>}
-      {Object.entries(transactionsByDate).map(([date, transactions]) => (
-        <details className="day-summary" key={date} open>
-          <summary>
-            <strong>{dayjs(date).format('MMMM D, YYYY')}</strong>
-          </summary>
-          <ul className="transaction-list">
-            {transactions.map((transaction: Transaction) => (
-              <li key={transaction.id}>
-                <TransactionView transaction={transaction} />
-              </li>
-            ))}
-          </ul>
-        </details>
-      ))}
     </div>
   );
 }

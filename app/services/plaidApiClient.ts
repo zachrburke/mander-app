@@ -147,8 +147,8 @@ export async function getAccounts(item: LinkedItem) : Promise<ManderAccount[]> {
         type: 'fake',
         mask: '1234',
         balances: {
-          available: 1000,
-          current: 1000,
+          available: 0,
+          current: 0,
           iso_currency_code: 'USD',
           limit: 0,
           unofficial_currency_code: '',

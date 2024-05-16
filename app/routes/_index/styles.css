@@ -80,6 +80,12 @@ form.period {
     margin-bottom: 10px;
 }
 
+.transaction-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 10px;
+}
+
 .add-transaction {
     border: 1px solid #ccc;
     border-radius: 5px;
