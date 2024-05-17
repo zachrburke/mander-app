@@ -1,7 +1,7 @@
 import {LoaderFunction} from '@remix-run/node';
 import { redirect } from '@remix-run/react';
 import { authenticator } from '~/auth.server';
-import { getLinkedItems, saveCursor } from '~/services/linkedItemService';
+import { getLinkedItems } from '~/services/linkedItemService';
 import * as plaidApi from '~/services/plaidApiClient';
 
 export const loader: LoaderFunction = async ({ request }) => {

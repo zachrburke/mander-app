@@ -43,7 +43,7 @@ function applySyncResult(itemData: ItemData, syncResult: plaidApi.TransactionSyn
 async function getSyncResult(itemId: string, cursor: string | null): Promise<plaidApi.TransactionSyncResult> {
   let url = `/import/sync?itemId=${itemId}`;
   if (cursor) {
-    url += `&cursor=${encodeURI(cursor)}`;
+    url += `&cursor=${encodeURIComponent(cursor)}`;
   }
   const response = await fetch(url);
   return await response.json();
