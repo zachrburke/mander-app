@@ -89,7 +89,7 @@ export type TransactionSyncResult = {
   added: Transaction[];
   modified: Transaction[];
   removed: Transaction[];
-  cursor: string | null;
+  cursor: string;
   itemId: string;
 }
 
@@ -234,6 +234,9 @@ export async function syncTransactions(itemId: string, accessToken: string, curs
         access_token: accessToken,
         cursor: cursor,
         count: 500,
+        options: {
+          days_requested: 730,
+        }
       }),
     });
     const json = await response.json();
@@ -250,10 +253,11 @@ export async function syncTransactions(itemId: string, accessToken: string, curs
     result.removed = result.removed.concat(removed);
 
     cursor = json.next_cursor;
+    console.log('Synced transactions', { added: added.length, modified: modified.length, removed: removed.length, cursor, status: json.transactions_update_status });
     if (!json.has_more) break;
   }
   result.accounts = await getAccounts({ itemId, accessToken });
-  result.cursor = cursor;
+  result.cursor = cursor!;
   return result;
 }
 
