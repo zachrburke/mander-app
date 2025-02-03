@@ -1,4 +1,4 @@
-# Welcome to Remix!
+# Built using remix and Netlify
 
 - [Remix Docs](https://remix.run/docs)
 - [Netlify Functions Overview](https://docs.netlify.com/functions/overview)
@@ -36,6 +36,11 @@ Ensure all packages are installed by running:
 ```sh
 npm install
 ```
+
+You will need the following to run:
+* Redis running on the default port
+* A Plaid API key (sandbox will work)
+* An Auth0 API key
 
 Run
 
